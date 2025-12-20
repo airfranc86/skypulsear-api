@@ -1,0 +1,62 @@
+# SkyPulse API - .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+.Cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Legacy (no subir)
+_legacy_streamlit/
+public/
+Instagram/
+scripts/
+
+# Archivos locales
+StationCba.csv
+*.csv
+
+# Reportes de auditoría (pueden contener tokens)
+*lighthouse*.json
+*audit*.json
+*.har
+
+# Archivos sensibles
+*.pem
+*.key
+.env.local
+.env.*.local
+
+.vercel
+tests/

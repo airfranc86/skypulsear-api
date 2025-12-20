@@ -1,0 +1,43 @@
+# SkyPulse - Dependencias de Producción
+# Versión: 2.0.0
+# Fecha: 2025-12-18
+
+# Framework API (FastAPI + Render)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Procesamiento de Datos
+pandas>=2.1.0
+numpy>=1.26.0
+
+# Visualización (para generación de reportes)
+altair>=5.2.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# APIs y HTTP
+requests>=2.31.0
+httpx>=0.25.0
+
+# AWS (para WRF-SMN dataset)
+boto3>=1.29.0
+
+# NetCDF (para WRF-SMN - lectura de archivos NetCDF)
+# Nota: netCDF4 puede requerir HDF5 y NetCDF C libraries
+# netCDF4>=1.6.0  # Descomentar cuando se implemente lectura completa de NetCDF
+# xarray>=2023.1.0  # Descomentar cuando se implemente lectura completa de NetCDF
+
+# Utilidades
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+
+# Meteosource (opcional - wrapper oficial de la API)
+# pymeteosource>=1.0.0  # Descomentar si se prefiere usar el wrapper oficial
+# Nota: Actualmente usamos requests directo, pero pymeteosource puede ser útil
+# Referencia: https://github.com/Meteosource/pymeteosource
+
+# Fechas y Tiempo
+python-dateutil>=2.8.2
+
+# PDF Generation
+weasyprint>=65.0

@@ -1,0 +1,24 @@
+# Configuración de Render para SkyPulse API
+# Documentación: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: skypulse-api
+    env: python
+    plan: starter  # $7/mes - cambiar a 'free' para desarrollo
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: METEOSOURCE_API_KEY
+        sync: false  # Configurar manualmente en Render Dashboard
+      - key: WINDY_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+

@@ -33,8 +33,8 @@ async def debug_repositories() -> dict:
                 if os.getenv("METEOSOURCE_API_KEY")
                 else "❌ No configurado"
             ),
-            "WINDY_API_KEY": (
-                "✅ Configurado" if os.getenv("WINDY_API_KEY") else "❌ No configurado"
+            "WINDY_POINT_FORECAST_API_KEY": (
+                "✅ Configurado" if os.getenv("WINDY_POINT_FORECAST_API_KEY") else "❌ No configurado"
             ),
             "VALID_API_KEYS": (
                 "✅ Configurado" if os.getenv("VALID_API_KEYS") else "❌ No configurado"

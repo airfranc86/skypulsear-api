@@ -29,8 +29,17 @@ class WindyRepository(IWeatherRepository):
 
     # Modelos disponibles en Windy API según documentación oficial
     # Para Argentina/Córdoba: usar GFS o cams (modelos globales)
-    AVAILABLE_MODELS = ["gfs", "cams", "iconEu", "arome", "namConus", "namHawaii", "namAlaska", "gfsWave"]
-    
+    AVAILABLE_MODELS = [
+        "gfs",
+        "cams",
+        "iconEu",
+        "arome",
+        "namConus",
+        "namHawaii",
+        "namAlaska",
+        "gfsWave",
+    ]
+
     # Modelos globales recomendados para Argentina
     GLOBAL_MODELS = ["gfs", "cams"]
 
@@ -43,9 +52,11 @@ class WindyRepository(IWeatherRepository):
             default_model: Modelo por defecto ('gfs', 'cams', etc.)
                           GFS recomendado para Argentina (modelo global, actualizaciones frecuentes)
         """
-        self.api_key = api_key or os.getenv("WINDY_API_KEY")
+        # Windy tiene dos APIs: Point Forecast y Map Forecast
+        # Usamos WINDY_POINT_FORECAST_API_KEY para Point Forecast API
+        self.api_key = api_key or os.getenv("WINDY_POINT_FORECAST_API_KEY")
         if not self.api_key:
-            raise ValueError("WINDY_API_KEY no configurado")
+            raise ValueError("WINDY_POINT_FORECAST_API_KEY no configurado")
 
         if default_model not in self.AVAILABLE_MODELS:
             raise ValueError(
@@ -55,11 +66,22 @@ class WindyRepository(IWeatherRepository):
         self.default_model = default_model
         self.base_url = "https://api.windy.com/api/point-forecast/v2"
         self.timeout = HTTP_TIMEOUT
-        
+
         # Parámetros meteorológicos a solicitar
-        self.parameters = ["temp", "dewpoint", "precip", "wind", "windGust", "pressure", "rh", "lclouds", "mclouds", "hclouds"]
+        self.parameters = [
+            "temp",
+            "dewpoint",
+            "precip",
+            "wind",
+            "windGust",
+            "pressure",
+            "rh",
+            "lclouds",
+            "mclouds",
+            "hclouds",
+        ]
         self.levels = ["surface"]  # Nivel de superficie por defecto
-        
+
         logger.info(f"WindyRepository inicializado con modelo: {default_model.upper()}")
 
     def get_current_weather(
@@ -77,11 +99,11 @@ class WindyRepository(IWeatherRepository):
             WeatherData con condiciones actuales o None si hay error
         """
         model = model or self.default_model
-        
+
         # Retry con backoff exponencial para errores DNS/red
         max_retries = 3
         retry_delay = 1  # segundos
-        
+
         for attempt in range(max_retries):
             try:
                 url = f"{self.base_url}"
@@ -98,51 +120,67 @@ class WindyRepository(IWeatherRepository):
                 logger.info(
                     f"Obteniendo datos actuales de Windy ({model.upper()}) para ({latitude}, {longitude}) - Intento {attempt + 1}/{max_retries}"
                 )
-                response = requests.post(url, json=payload, timeout=self.timeout, headers={"Content-Type": "application/json"})
-                
+                response = requests.post(
+                    url,
+                    json=payload,
+                    timeout=self.timeout,
+                    headers={"Content-Type": "application/json"},
+                )
+
                 logger.info(f"Windy response status: {response.status_code}")
                 response.raise_for_status()
 
                 data = response.json()
                 result = self._extract_current_weather(data, latitude, longitude, model)
                 if result:
-                    logger.info(f"Datos actuales extraídos exitosamente de Windy ({model.upper()})")
+                    logger.info(
+                        f"Datos actuales extraídos exitosamente de Windy ({model.upper()})"
+                    )
                 else:
-                    logger.warning(f"No se pudieron extraer datos actuales de Windy ({model.upper()})")
+                    logger.warning(
+                        f"No se pudieron extraer datos actuales de Windy ({model.upper()})"
+                    )
                 return result
 
             except ConnectionError as e:
                 # Error DNS o conexión - retry con backoff
                 error_msg = str(e)
-                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                if (
+                    "Failed to resolve" in error_msg
+                    or "Name or service not known" in error_msg
+                ):
                     logger.warning(
                         f"Error DNS al conectar con Windy (intento {attempt + 1}/{max_retries}): {e}"
                     )
                     if attempt < max_retries - 1:
-                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        time.sleep(retry_delay * (2**attempt))  # Backoff exponencial
                         continue
                     else:
-                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        logger.error(
+                            f"Error DNS persistente después de {max_retries} intentos: {e}"
+                        )
                         return None
                 else:
                     logger.error(f"Error de conexión con Windy: {e}")
                     return None
-                    
+
             except Timeout as e:
                 logger.error(f"Timeout obteniendo datos actuales de Windy: {e}")
                 return None  # No retry para timeouts
-                
+
             except RequestException as e:
                 # Otros errores HTTP (401, 403, 500, etc.) - no retry
                 logger.error(f"Error HTTP obteniendo datos actuales de Windy: {e}")
-                if hasattr(e, 'response') and e.response is not None:
-                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                if hasattr(e, "response") and e.response is not None:
+                    logger.error(
+                        f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}"
+                    )
                 return None
-                
+
             except Exception as e:
                 logger.error(f"Error inesperado obteniendo datos actuales: {e}")
                 return None
-        
+
         return None
 
     def get_forecast(
@@ -165,11 +203,11 @@ class WindyRepository(IWeatherRepository):
             Lista de WeatherData con pronóstico
         """
         model = model or self.default_model
-        
+
         # Retry con backoff exponencial para errores DNS/red
         max_retries = 3
         retry_delay = 1  # segundos
-        
+
         for attempt in range(max_retries):
             try:
                 url = f"{self.base_url}"
@@ -186,49 +224,65 @@ class WindyRepository(IWeatherRepository):
                 logger.info(
                     f"Obteniendo pronóstico de Windy ({model.upper()}) para ({latitude}, {longitude}), {hours}h - Intento {attempt + 1}/{max_retries}"
                 )
-                response = requests.post(url, json=payload, timeout=self.timeout, headers={"Content-Type": "application/json"})
-                
+                response = requests.post(
+                    url,
+                    json=payload,
+                    timeout=self.timeout,
+                    headers={"Content-Type": "application/json"},
+                )
+
                 logger.info(f"Windy forecast response status: {response.status_code}")
                 response.raise_for_status()
 
                 data = response.json()
-                forecast = self._extract_forecast(data, latitude, longitude, hours, model)
+                forecast = self._extract_forecast(
+                    data, latitude, longitude, hours, model
+                )
 
-                logger.info(f"Pronóstico obtenido: {len(forecast)} puntos de Windy ({model.upper()})")
+                logger.info(
+                    f"Pronóstico obtenido: {len(forecast)} puntos de Windy ({model.upper()})"
+                )
                 return forecast
 
             except ConnectionError as e:
                 # Error DNS o conexión - retry con backoff
                 error_msg = str(e)
-                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                if (
+                    "Failed to resolve" in error_msg
+                    or "Name or service not known" in error_msg
+                ):
                     logger.warning(
                         f"Error DNS al conectar con Windy (intento {attempt + 1}/{max_retries}): {e}"
                     )
                     if attempt < max_retries - 1:
-                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        time.sleep(retry_delay * (2**attempt))  # Backoff exponencial
                         continue
                     else:
-                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        logger.error(
+                            f"Error DNS persistente después de {max_retries} intentos: {e}"
+                        )
                         return []
                 else:
                     logger.error(f"Error de conexión con Windy: {e}")
                     return []
-                    
+
             except Timeout as e:
                 logger.error(f"Timeout obteniendo pronóstico de Windy: {e}")
                 return []  # No retry para timeouts
-                
+
             except RequestException as e:
                 # Otros errores HTTP (401, 403, 500, etc.) - no retry
                 logger.error(f"Error HTTP obteniendo pronóstico de Windy: {e}")
-                if hasattr(e, 'response') and e.response is not None:
-                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                if hasattr(e, "response") and e.response is not None:
+                    logger.error(
+                        f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}"
+                    )
                 return []
-                
+
             except Exception as e:
                 logger.error(f"Error inesperado obteniendo pronóstico: {e}")
                 return []
-        
+
         return []
 
     def get_historical(
@@ -323,7 +377,7 @@ class WindyRepository(IWeatherRepository):
     ) -> Optional[WeatherData]:
         """
         Extraer datos actuales de la respuesta de Windy.
-        
+
         Formato de respuesta según documentación:
         - ts: array de timestamps (milliseconds desde epoch)
         - temp-surface: array de temperaturas
@@ -357,25 +411,38 @@ class WindyRepository(IWeatherRepository):
 
             # Extraer valores del índice 0
             temperature = temp_array[0] if temp_array and len(temp_array) > 0 else None
-            
+
             # Calcular velocidad y dirección del viento desde componentes u y v
             wind_speed = None
             wind_direction = None
-            if wind_u_array and wind_v_array and len(wind_u_array) > 0 and len(wind_v_array) > 0:
+            if (
+                wind_u_array
+                and wind_v_array
+                and len(wind_u_array) > 0
+                and len(wind_v_array) > 0
+            ):
                 u = wind_u_array[0]
                 v = wind_v_array[0]
                 if u is not None and v is not None:
-                    wind_speed = (u**2 + v**2)**0.5  # Magnitud del vector
+                    wind_speed = (u**2 + v**2) ** 0.5  # Magnitud del vector
                     # Dirección en grados (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
                     # atan2(u, v) da el ángulo en radianes desde el norte
                     wind_direction = (math.degrees(math.atan2(u, v)) + 360) % 360
-            
-            precipitation = precip_array[0] if precip_array and len(precip_array) > 0 else None
-            
+
+            precipitation = (
+                precip_array[0] if precip_array and len(precip_array) > 0 else None
+            )
+
             # Calcular cobertura total de nubes (suma de baja, media y alta)
             cloud_cover = None
-            if (lclouds_array and mclouds_array and hclouds_array and 
-                len(lclouds_array) > 0 and len(mclouds_array) > 0 and len(hclouds_array) > 0):
+            if (
+                lclouds_array
+                and mclouds_array
+                and hclouds_array
+                and len(lclouds_array) > 0
+                and len(mclouds_array) > 0
+                and len(hclouds_array) > 0
+            ):
                 lc = lclouds_array[0] or 0
                 mc = mclouds_array[0] or 0
                 hc = hclouds_array[0] or 0
@@ -393,7 +460,9 @@ class WindyRepository(IWeatherRepository):
                 longitude=longitude,
             )
         except Exception as e:
-            logger.error(f"Error extrayendo datos actuales de Windy: {e}", exc_info=True)
+            logger.error(
+                f"Error extrayendo datos actuales de Windy: {e}", exc_info=True
+            )
             return None
 
     def _extract_forecast(
@@ -406,7 +475,7 @@ class WindyRepository(IWeatherRepository):
     ) -> List[WeatherData]:
         """
         Extraer pronóstico de la respuesta de Windy.
-        
+
         Formato: arrays paralelos donde cada índice corresponde a un timestamp.
         """
         forecast = []
@@ -420,7 +489,7 @@ class WindyRepository(IWeatherRepository):
 
             # Limitar a las horas solicitadas
             num_points = min(len(ts_array), hours)
-            
+
             # Extraer arrays de datos
             temp_array = data.get("temp-surface", [])
             wind_u_array = data.get("wind_u-surface", [])
@@ -436,26 +505,40 @@ class WindyRepository(IWeatherRepository):
                 timestamp = datetime.fromtimestamp(timestamp_ms / 1000.0)
 
                 # Extraer valores del índice i
-                temperature = temp_array[i] if temp_array and i < len(temp_array) else None
-                
+                temperature = (
+                    temp_array[i] if temp_array and i < len(temp_array) else None
+                )
+
                 # Calcular velocidad y dirección del viento
                 wind_speed = None
                 wind_direction = None
-                if (wind_u_array and wind_v_array and 
-                    i < len(wind_u_array) and i < len(wind_v_array)):
+                if (
+                    wind_u_array
+                    and wind_v_array
+                    and i < len(wind_u_array)
+                    and i < len(wind_v_array)
+                ):
                     u = wind_u_array[i]
                     v = wind_v_array[i]
                     if u is not None and v is not None:
-                        wind_speed = (u**2 + v**2)**0.5
+                        wind_speed = (u**2 + v**2) ** 0.5
                         # Dirección en grados (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
                         wind_direction = (math.degrees(math.atan2(u, v)) + 360) % 360
-                
-                precipitation = precip_array[i] if precip_array and i < len(precip_array) else None
-                
+
+                precipitation = (
+                    precip_array[i] if precip_array and i < len(precip_array) else None
+                )
+
                 # Cobertura total de nubes
                 cloud_cover = None
-                if (lclouds_array and mclouds_array and hclouds_array and
-                    i < len(lclouds_array) and i < len(mclouds_array) and i < len(hclouds_array)):
+                if (
+                    lclouds_array
+                    and mclouds_array
+                    and hclouds_array
+                    and i < len(lclouds_array)
+                    and i < len(mclouds_array)
+                    and i < len(hclouds_array)
+                ):
                     lc = lclouds_array[i] or 0
                     mc = mclouds_array[i] or 0
                     hc = hclouds_array[i] or 0
@@ -478,4 +561,3 @@ class WindyRepository(IWeatherRepository):
             logger.error(f"Error extrayendo pronóstico de Windy: {e}", exc_info=True)
 
         return forecast
-

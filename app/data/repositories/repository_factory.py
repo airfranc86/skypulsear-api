@@ -86,11 +86,12 @@ def create_repository(repository_type: str, **kwargs) -> Optional[IWeatherReposi
         return LocalStationsRepository(csv_path=csv_path)
 
     elif repository_type == "windy":
-        api_key = kwargs.get("api_key") or os.getenv("WINDY_API_KEY")
-        default_model = kwargs.get("default_model", "ecmwf")
+        # Windy Point Forecast API usa WINDY_POINT_FORECAST_API_KEY
+        api_key = kwargs.get("api_key") or os.getenv("WINDY_POINT_FORECAST_API_KEY")
+        default_model = kwargs.get("default_model", "gfs")
         if not api_key:
-            logger.error("WINDY_API_KEY no configurado")
-            raise ValueError("WINDY_API_KEY no configurado")
+            logger.error("WINDY_POINT_FORECAST_API_KEY no configurado")
+            raise ValueError("WINDY_POINT_FORECAST_API_KEY no configurado")
         return WindyRepository(api_key=api_key, default_model=default_model)
 
     elif repository_type == "aws_smn" or repository_type == "wrfsmn":
@@ -134,7 +135,7 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
 
     # Windy
     try:
-        if os.getenv("WINDY_API_KEY"):
+        if os.getenv("WINDY_POINT_FORECAST_API_KEY"):
             # Crear repositorios para modelos globales (aplicables a Argentina)
             # GFS: modelo global, actualizaciones frecuentes
             windy_gfs = create_repository("windy", default_model="gfs")

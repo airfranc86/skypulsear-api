@@ -66,8 +66,9 @@ class LocalStationsRepository(IWeatherRepository):
             
         except FileNotFoundError:
             error_msg = f"Archivo no encontrado: {self.csv_path}"
-            logger.error(error_msg)
-            raise RepositoryError(error_msg) from None
+            logger.warning(error_msg)
+            # Retornar DataFrame vacío en lugar de lanzar excepción
+            return pd.DataFrame()
         except pd.errors.EmptyDataError:
             error_msg = f"El archivo CSV está vacío: {self.csv_path}"
             logger.error(error_msg)

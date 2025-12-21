@@ -6,7 +6,7 @@ Este repositorio implementa acceso directo a AWS S3 como alternativa.
 
 import os
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 

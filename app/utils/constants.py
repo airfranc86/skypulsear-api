@@ -62,7 +62,7 @@ DEFAULT_ALERT_THRESHOLDS = {
 }
 
 # Timeout para requests HTTP (segundos)
-HTTP_TIMEOUT = 12
+HTTP_TIMEOUT = 30  # Aumentado para APIs externas que pueden ser lentas
 
 # Ventana de tiempo para comparación (minutos)
 COMPARISON_TIME_WINDOW = 15

@@ -84,9 +84,12 @@ class MeteosourceRepository(IWeatherRepository):
             data = response.json()
             return self._extract_current_weather(data, latitude, longitude)
 
+        except requests.exceptions.Timeout as e:
+            logger.error(f"Timeout obteniendo datos actuales de Meteosource: {e}")
+            return None  # Retornar None en lugar de lanzar excepción
         except requests.exceptions.RequestException as e:
             logger.error(f"Error obteniendo datos actuales de Meteosource: {e}")
-            raise MeteosourceAPIError(f"Error en API Meteosource: {e}") from e
+            return None  # Retornar None para permitir que otras fuentes funcionen
         except Exception as e:
             logger.error(f"Error inesperado obteniendo datos actuales: {e}")
             return None
@@ -137,9 +140,12 @@ class MeteosourceRepository(IWeatherRepository):
             logger.info(f"Pronóstico obtenido: {len(forecast)} puntos")
             return forecast
 
+        except requests.exceptions.Timeout as e:
+            logger.error(f"Timeout obteniendo pronóstico de Meteosource: {e}")
+            return []  # Retornar lista vacía para permitir que otras fuentes funcionen
         except requests.exceptions.RequestException as e:
             logger.error(f"Error obteniendo pronóstico de Meteosource: {e}")
-            raise MeteosourceAPIError(f"Error en API Meteosource: {e}") from e
+            return []  # Retornar lista vacía en lugar de lanzar excepción
 
     def get_historical(
         self,

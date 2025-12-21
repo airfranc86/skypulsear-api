@@ -2,6 +2,13 @@
 
 API de decisiones meteorológicas para Argentina. Backend FastAPI desplegado en Render.
 
+## 📚 Documentación
+
+- **MASTER-PLAN.md** - Plan maestro completo del proyecto (en `.Cursor/Docs/`)
+- **ISSUES-PENDIENTES.md** - Problemas conocidos y tareas de investigación
+- **INTEGRACION-BACKEND-FRONTEND.md** - Detalles de integración y seguridad
+- **CONFIGURACION-RENDER.md** - Guía de configuración de variables de entorno
+
 ## Stack
 
 - **Framework:** FastAPI

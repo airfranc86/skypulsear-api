@@ -238,21 +238,27 @@ class UnifiedWeatherEngine:
         Captura excepciones y retorna lista vacía en caso de error.
         """
         try:
+            logger.info(f"Intentando obtener datos de {source} para ({latitude}, {longitude}), {hours}h")
             # Obtener datos del repositorio
             raw_data = repo.get_forecast(latitude, longitude, hours)
             
             if not raw_data:
+                logger.warning(f"{source} retornó datos vacíos")
                 return []
             
+            logger.info(f"{source} retornó {len(raw_data)} registros")
+            
             # Normalizar
-            return self.normalizer.normalize_batch(
+            normalized = self.normalizer.normalize_batch(
                 data_list=raw_data,
                 source=source,
                 latitude=latitude,
                 longitude=longitude
             )
+            logger.info(f"{source} normalizado: {len(normalized)} registros")
+            return normalized
         except Exception as e:
-            logger.error(f"Error en fetch_forecast de {source}: {e}")
+            logger.error(f"Error en fetch_forecast de {source}: {e}", exc_info=True)
             return []
     
     def _fetch_current_safe(

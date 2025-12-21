@@ -70,9 +70,9 @@ class MeteosourceRepository(IWeatherRepository):
                 "lat": latitude,
                 "lon": longitude,
                 "key": self.api_key,
-                "sections": "current",
+                "sections": "current",  # String, no array según doc
                 "units": "metric",
-                "language": "es",
+                "lang": "es",  # 'lang' no 'language' según documentación
             }
 
             logger.info(
@@ -125,9 +125,9 @@ class MeteosourceRepository(IWeatherRepository):
                 "lat": latitude,
                 "lon": longitude,
                 "key": self.api_key,
-                "sections": "hourly",
+                "sections": "hourly",  # String, no array según doc
                 "units": "metric",
-                "language": "es",
+                "lang": "es",  # 'lang' no 'language' según documentación
             }
 
             logger.info(
@@ -199,7 +199,7 @@ class MeteosourceRepository(IWeatherRepository):
                     "date": date_str,
                     "key": self.api_key,
                     "units": "metric",
-                    "language": "es",
+                    "lang": "es",
                 }
 
                 logger.debug(f"Obteniendo histórico de Meteosource para {date_str}")

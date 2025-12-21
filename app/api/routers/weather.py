@@ -56,6 +56,19 @@ async def get_current_weather(
     try:
         logger.info(f"Obteniendo datos actuales para ({lat}, {lon})")
 
+        # Verificar repositorios disponibles
+        from app.data.repositories.repository_factory import RepositoryFactory
+        factory = RepositoryFactory()
+        available_repos = list(factory.get_all_repositories().keys())
+        logger.info(f"Repositorios disponibles: {available_repos}")
+        
+        if not available_repos:
+            logger.error("No hay repositorios disponibles. Verificar API keys en variables de entorno.")
+            raise HTTPException(
+                status_code=503,
+                detail="No hay fuentes de datos configuradas. Verificar API keys.",
+            )
+
         engine = UnifiedWeatherEngine()
         forecasts = engine.get_unified_forecast(
             latitude=lat,
@@ -64,9 +77,10 @@ async def get_current_weather(
         )
 
         if not forecasts:
+            logger.warning(f"No se obtuvieron pronósticos. Repositorios disponibles: {available_repos}")
             raise HTTPException(
                 status_code=503,
-                detail="No se pudieron obtener datos meteorológicos. Intente más tarde.",
+                detail=f"No se pudieron obtener datos meteorológicos. Repositorios disponibles: {', '.join(available_repos)}",
             )
 
         # Obtener el pronóstico actual (forecast_hour=0 o el más cercano)

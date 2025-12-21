@@ -23,13 +23,15 @@ app = FastAPI(
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
-# Configurar CORS para permitir frontend en Vercel
+# Configurar CORS para permitir frontend en Vercel y desarrollo local
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5500",
+        "http://localhost:8080",
         "http://127.0.0.1:5500",
+        "http://127.0.0.1:8080",
         "https://*.vercel.app",
         "https://skypulse.vercel.app",
     ],

@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers import weather, risk, alerts, patterns, health
+from app.api.middleware.rate_limit import RateLimitMiddleware
+from app.api.middleware.security_headers import SecurityHeadersMiddleware
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -16,6 +18,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Middleware de seguridad (orden importante: primero los más generales)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 # Configurar CORS para permitir frontend en Vercel
 app.add_middleware(
@@ -49,4 +55,3 @@ async def root() -> dict[str, str]:
         "docs": "/docs",
         "health": "/health",
     }
-

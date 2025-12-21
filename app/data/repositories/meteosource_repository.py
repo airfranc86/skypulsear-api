@@ -75,14 +75,25 @@ class MeteosourceRepository(IWeatherRepository):
                 "language": "es",
             }
 
-            logger.debug(
+            logger.info(
                 f"Obteniendo datos actuales de Meteosource para ({latitude}, {longitude})"
             )
             response = requests.get(url, params=params, timeout=self.timeout)
+            
+            # Log status code antes de raise_for_status
+            logger.info(f"Meteosource response status: {response.status_code}")
+            
             response.raise_for_status()
 
             data = response.json()
-            return self._extract_current_weather(data, latitude, longitude)
+            logger.debug(f"Meteosource response keys: {list(data.keys())}")
+            
+            result = self._extract_current_weather(data, latitude, longitude)
+            if result:
+                logger.info("Datos actuales extraídos exitosamente de Meteosource")
+            else:
+                logger.warning("No se pudieron extraer datos actuales de Meteosource")
+            return result
 
         except requests.exceptions.Timeout as e:
             logger.error(f"Timeout obteniendo datos actuales de Meteosource: {e}")
@@ -119,14 +130,21 @@ class MeteosourceRepository(IWeatherRepository):
                 "language": "es",
             }
 
-            logger.debug(
+            logger.info(
                 f"Obteniendo pronóstico de Meteosource para ({latitude}, {longitude}), {hours}h"
             )
             response = requests.get(url, params=params, timeout=self.timeout)
+            
+            # Log status code
+            logger.info(f"Meteosource forecast response status: {response.status_code}")
+            
             response.raise_for_status()
 
             data = response.json()
+            logger.debug(f"Meteosource forecast response keys: {list(data.keys())}")
+            
             hourly_data = data.get("hourly", {}).get("data", [])
+            logger.info(f"Meteosource retornó {len(hourly_data)} puntos horarios")
 
             forecast = []
             for item in hourly_data[:hours]:

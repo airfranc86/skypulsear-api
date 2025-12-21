@@ -2,6 +2,7 @@
 
 import os
 import time
+import math
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import requests
@@ -365,8 +366,9 @@ class WindyRepository(IWeatherRepository):
                 v = wind_v_array[0]
                 if u is not None and v is not None:
                     wind_speed = (u**2 + v**2)**0.5  # Magnitud del vector
-                    # Dirección en grados (0 = Norte, 90 = Este)
-                    wind_direction = (270 - (180 / 3.14159) * (v / u if u != 0 else 0)) % 360
+                    # Dirección en grados (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
+                    # atan2(u, v) da el ángulo en radianes desde el norte
+                    wind_direction = (math.degrees(math.atan2(u, v)) + 360) % 360
             
             precipitation = precip_array[0] if precip_array and len(precip_array) > 0 else None
             
@@ -445,7 +447,8 @@ class WindyRepository(IWeatherRepository):
                     v = wind_v_array[i]
                     if u is not None and v is not None:
                         wind_speed = (u**2 + v**2)**0.5
-                        wind_direction = (270 - (180 / 3.14159) * (v / u if u != 0 else 0)) % 360
+                        # Dirección en grados (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
+                        wind_direction = (math.degrees(math.atan2(u, v)) + 360) % 360
                 
                 precipitation = precip_array[i] if precip_array and i < len(precip_array) else None
                 

@@ -1,5 +1,10 @@
 # Integración Backend-Frontend SkyPulse
 
+**Última actualización:** 2025-12-21  
+**Versión:** 2.0
+
+---
+
 ## ✅ Completado
 
 ### 1. Seguridad del Backend (FastAPI)
@@ -40,41 +45,43 @@ await api.getPatterns(lat, lon, hours);
 - `public/dashboard.html` - Usa `SkyPulseAPI` en lugar de `fetch` directo
 - Configuración de `backendUrl` apuntando a Render
 - Funciones `fetchCurrentWeather`, `fetchForecast`, etc. actualizadas
+- Fallback a cálculo local si backend no disponible
+- Fallback a Open-Meteo API si backend no disponible
 
-## 🔧 Configuración
+### 4. Correcciones de Consistencia
 
-### Variables de Entorno (Render)
+**Problema resuelto:** Inconsistencia entre alert-banner y risk-score-card
 
-En Render Dashboard, configurar:
-```
-METEOSOURCE_API_KEY=tu_key
-WINDY_API_KEY=tu_key
-VALID_API_KEYS=sk_live_abc123,sk_test_xyz789  # Separadas por comas
-SUPABASE_URL=https://tu-proyecto.supabase.co  # Cuando se integre
-SUPABASE_KEY=tu_key  # Cuando se integre
-```
+**Solución:**
+- ✅ `generateAlert()` ahora SIEMPRE usa `risks.score` para determinar el nivel
+- ✅ Alert banner y risk score card usan la misma fuente de verdad
 
-### Frontend (Vercel)
+### 5. Warnings de Deprecación Corregidos
 
-En `dashboard.html`, la configuración está en:
-```javascript
-const CONFIG = {
-    backendUrl: 'https://skypulsear-api.onrender.com',
-    apiKey: null  // Opcional, para features premium
-};
-```
+**Pydantic V2:**
+- ✅ `class Config:` → `model_config = ConfigDict(...)` (5 modelos)
+
+**datetime.utcnow():**
+- ✅ `datetime.utcnow()` → `datetime.now(UTC)` (10 ocurrencias)
+
+**Resultado:** 0 warnings de deprecación en tests
+
+---
 
 ## 📡 Endpoints Disponibles
 
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
 | GET | `/health` | Health check | No |
+| GET | `/debug/repos` | Debug repositorios | No |
 | GET | `/api/v1/weather/current` | Datos actuales | No |
 | GET | `/api/v1/weather/forecast` | Pronóstico | No |
 | POST | `/api/v1/risk-score` | Risk score | Opcional |
 | GET | `/api/v1/alerts` | Alertas | No |
 | GET | `/api/v1/patterns` | Patrones | No |
 | GET | `/docs` | Swagger UI | No |
+
+---
 
 ## 🔒 Seguridad
 
@@ -93,12 +100,57 @@ const CONFIG = {
 - Configurar en `VALID_API_KEYS` (separadas por comas)
 - Opcional para endpoints públicos, requerida para premium
 
+---
+
+## 🔧 Configuración
+
+### Variables de Entorno (Render)
+
+Ver `CONFIGURACION-RENDER.md` para guía detallada.
+
+Variables requeridas:
+```
+METEOSOURCE_API_KEY=tu_key
+WINDY_POINT_FORECAST_API_KEY=tu_key
+VALID_API_KEYS=sk_live_abc123,sk_test_xyz789
+```
+
+### Frontend (Vercel)
+
+En `dashboard.html`, la configuración está en:
+```javascript
+const CONFIG = {
+    backendUrl: 'https://skypulsear-api.onrender.com',
+    apiKey: null  // Opcional, para features premium
+};
+```
+
+---
+
+## 📊 Estado Actual
+
+### Backend
+- ✅ Endpoints FastAPI implementados y testeados
+- ✅ 17 tests pasando, 1 skipped (servicio no disponible - esperado)
+- ✅ 0 warnings de deprecación
+- ✅ Deploy en Render funcionando
+
+### Frontend
+- ✅ Integración con backend implementada
+- ✅ Fallback a cálculo local si backend no disponible
+- ✅ Consistencia alert-banner vs risk-score-card
+- ✅ Aclaración timeline
+
+---
+
 ## 🚀 Próximos Pasos
 
-1. **Probar integración**: Verificar que el dashboard consume la API correctamente
-2. **Integrar Supabase**: Cuando esté listo, agregar autenticación JWT
-3. **Rate limiting avanzado**: Migrar a Redis para producción
-4. **Monitoreo**: Agregar logging y métricas
+1. ⏳ **Integrar Supabase**: Cuando esté listo, agregar autenticación JWT
+2. ⏳ **Rate limiting avanzado**: Migrar a Redis para producción
+3. ⏳ **Monitoreo**: Agregar logging y métricas
+4. ⏳ **Testing end-to-end**: Verificar consistencia en producción
+
+---
 
 ## 📝 Notas
 
@@ -107,3 +159,9 @@ const CONFIG = {
 - Las API keys se validan contra `VALID_API_KEYS` (variable de entorno)
 - En el futuro, las API keys vendrán de Supabase
 
+---
+
+**Ver también:**
+- `CONFIGURACION-RENDER.md` - Configuración de variables de entorno
+- `ISSUES-PENDIENTES.md` - Problemas conocidos
+- `MASTER-PLAN.md` - Plan maestro completo del proyecto

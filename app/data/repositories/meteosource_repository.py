@@ -6,9 +6,11 @@ https://github.com/Meteosource/pymeteosource
 """
 
 import os
+import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import requests
+from requests.exceptions import ConnectionError, Timeout, RequestException
 
 from app.data.repositories.base_repository import IWeatherRepository
 from app.models.weather_data import WeatherData
@@ -64,46 +66,75 @@ class MeteosourceRepository(IWeatherRepository):
         Returns:
             WeatherData con condiciones actuales o None si hay error
         """
-        try:
-            url = f"{self.base_url}/point"
-            params = {
-                "lat": latitude,
-                "lon": longitude,
-                "key": self.api_key,
-                "sections": "current",  # String, no array según doc
-                "units": "metric",
-                "lang": "es",  # 'lang' no 'language' según documentación
-            }
+        # Retry con backoff exponencial para errores DNS/red
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}/point"
+                params = {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "key": self.api_key,
+                    "sections": "current",  # String, no array según doc
+                    "units": "metric",
+                    "lang": "es",  # 'lang' no 'language' según documentación
+                }
 
-            logger.info(
-                f"Obteniendo datos actuales de Meteosource para ({latitude}, {longitude})"
-            )
-            response = requests.get(url, params=params, timeout=self.timeout)
-            
-            # Log status code antes de raise_for_status
-            logger.info(f"Meteosource response status: {response.status_code}")
-            
-            response.raise_for_status()
+                logger.info(
+                    f"Obteniendo datos actuales de Meteosource para ({latitude}, {longitude}) - Intento {attempt + 1}/{max_retries}"
+                )
+                response = requests.get(url, params=params, timeout=self.timeout)
+                
+                # Log status code antes de raise_for_status
+                logger.info(f"Meteosource response status: {response.status_code}")
+                
+                response.raise_for_status()
 
-            data = response.json()
-            logger.debug(f"Meteosource response keys: {list(data.keys())}")
-            
-            result = self._extract_current_weather(data, latitude, longitude)
-            if result:
-                logger.info("Datos actuales extraídos exitosamente de Meteosource")
-            else:
-                logger.warning("No se pudieron extraer datos actuales de Meteosource")
-            return result
+                data = response.json()
+                logger.debug(f"Meteosource response keys: {list(data.keys())}")
+                
+                result = self._extract_current_weather(data, latitude, longitude)
+                if result:
+                    logger.info("Datos actuales extraídos exitosamente de Meteosource")
+                else:
+                    logger.warning("No se pudieron extraer datos actuales de Meteosource")
+                return result
 
-        except requests.exceptions.Timeout as e:
-            logger.error(f"Timeout obteniendo datos actuales de Meteosource: {e}")
-            return None  # Retornar None en lugar de lanzar excepción
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error obteniendo datos actuales de Meteosource: {e}")
-            return None  # Retornar None para permitir que otras fuentes funcionen
-        except Exception as e:
-            logger.error(f"Error inesperado obteniendo datos actuales: {e}")
-            return None
+            except ConnectionError as e:
+                # Error DNS o conexión - retry con backoff
+                error_msg = str(e)
+                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    logger.warning(
+                        f"Error DNS al conectar con Meteosource (intento {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        continue
+                    else:
+                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        return None
+                else:
+                    logger.error(f"Error de conexión con Meteosource: {e}")
+                    return None
+                    
+            except Timeout as e:
+                logger.error(f"Timeout obteniendo datos actuales de Meteosource: {e}")
+                return None  # No retry para timeouts
+                
+            except RequestException as e:
+                # Otros errores HTTP (401, 403, 500, etc.) - no retry
+                logger.error(f"Error HTTP obteniendo datos actuales de Meteosource: {e}")
+                if hasattr(e, 'response') and e.response is not None:
+                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                return None
+                
+            except Exception as e:
+                logger.error(f"Error inesperado obteniendo datos actuales: {e}")
+                return None
+        
+        return None
 
     def get_forecast(
         self, latitude: float, longitude: float, hours: int = 72
@@ -119,51 +150,83 @@ class MeteosourceRepository(IWeatherRepository):
         Returns:
             Lista de WeatherData con pronóstico
         """
-        try:
-            url = f"{self.base_url}/point"
-            params = {
-                "lat": latitude,
-                "lon": longitude,
-                "key": self.api_key,
-                "sections": "hourly",  # String, no array según doc
-                "units": "metric",
-                "lang": "es",  # 'lang' no 'language' según documentación
-            }
+        # Retry con backoff exponencial para errores DNS/red
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}/point"
+                params = {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "key": self.api_key,
+                    "sections": "hourly",  # String, no array según doc
+                    "units": "metric",
+                    "lang": "es",  # 'lang' no 'language' según documentación
+                }
 
-            logger.info(
-                f"Obteniendo pronóstico de Meteosource para ({latitude}, {longitude}), {hours}h"
-            )
-            response = requests.get(url, params=params, timeout=self.timeout)
-            
-            # Log status code
-            logger.info(f"Meteosource forecast response status: {response.status_code}")
-            
-            response.raise_for_status()
-
-            data = response.json()
-            logger.debug(f"Meteosource forecast response keys: {list(data.keys())}")
-            
-            hourly_data = data.get("hourly", {}).get("data", [])
-            logger.info(f"Meteosource retornó {len(hourly_data)} puntos horarios")
-
-            forecast = []
-            for item in hourly_data[:hours]:
-                # Pasar data completo para detectar modelo WRF
-                weather_data = self._extract_hourly_weather(
-                    item, latitude, longitude, data
+                logger.info(
+                    f"Obteniendo pronóstico de Meteosource para ({latitude}, {longitude}), {hours}h - Intento {attempt + 1}/{max_retries}"
                 )
-                if weather_data:
-                    forecast.append(weather_data)
+                response = requests.get(url, params=params, timeout=self.timeout)
+                
+                # Log status code
+                logger.info(f"Meteosource forecast response status: {response.status_code}")
+                
+                response.raise_for_status()
 
-            logger.info(f"Pronóstico obtenido: {len(forecast)} puntos")
-            return forecast
+                data = response.json()
+                logger.debug(f"Meteosource forecast response keys: {list(data.keys())}")
+                
+                hourly_data = data.get("hourly", {}).get("data", [])
+                logger.info(f"Meteosource retornó {len(hourly_data)} puntos horarios")
 
-        except requests.exceptions.Timeout as e:
-            logger.error(f"Timeout obteniendo pronóstico de Meteosource: {e}")
-            return []  # Retornar lista vacía para permitir que otras fuentes funcionen
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error obteniendo pronóstico de Meteosource: {e}")
-            return []  # Retornar lista vacía en lugar de lanzar excepción
+                forecast = []
+                for item in hourly_data[:hours]:
+                    # Pasar data completo para detectar modelo WRF
+                    weather_data = self._extract_hourly_weather(
+                        item, latitude, longitude, data
+                    )
+                    if weather_data:
+                        forecast.append(weather_data)
+
+                logger.info(f"Pronóstico obtenido: {len(forecast)} puntos")
+                return forecast
+
+            except ConnectionError as e:
+                # Error DNS o conexión - retry con backoff
+                error_msg = str(e)
+                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    logger.warning(
+                        f"Error DNS al conectar con Meteosource (intento {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        continue
+                    else:
+                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        return []
+                else:
+                    logger.error(f"Error de conexión con Meteosource: {e}")
+                    return []
+                    
+            except Timeout as e:
+                logger.error(f"Timeout obteniendo pronóstico de Meteosource: {e}")
+                return []  # No retry para timeouts
+                
+            except RequestException as e:
+                # Otros errores HTTP (401, 403, 500, etc.) - no retry
+                logger.error(f"Error HTTP obteniendo pronóstico de Meteosource: {e}")
+                if hasattr(e, 'response') and e.response is not None:
+                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                return []
+                
+            except Exception as e:
+                logger.error(f"Error inesperado obteniendo pronóstico: {e}")
+                return []
+        
+        return []
 
     def get_historical(
         self,

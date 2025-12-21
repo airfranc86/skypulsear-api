@@ -136,16 +136,11 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     # Windy
     try:
         if os.getenv("WINDY_POINT_FORECAST_API_KEY"):
-            # Crear repositorios para modelos globales (aplicables a Argentina)
-            # GFS: modelo global, actualizaciones frecuentes
+            # Solo GFS disponible (modelo global, actualizaciones frecuentes)
+            # CAMS removido: no retorna datos para la región
             windy_gfs = create_repository("windy", default_model="gfs")
             repositories["Windy-GFS"] = windy_gfs
             logger.info("Repositorio Windy-GFS creado")
-
-            # CAMS: modelo global de calidad del aire y meteorología
-            windy_cams = create_repository("windy", default_model="cams")
-            repositories["Windy-CAMS"] = windy_cams
-            logger.info("Repositorio Windy-CAMS creado")
     except Exception as e:
         logger.warning(f"No se pudo crear repositorio Windy: {e}")
 

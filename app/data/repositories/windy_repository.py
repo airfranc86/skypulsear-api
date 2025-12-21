@@ -1,9 +1,11 @@
 """Repositorio para datos de Windy API (ECMWF, GFS, ICON)."""
 
 import os
+import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import requests
+from requests.exceptions import ConnectionError, Timeout, RequestException
 
 from app.data.repositories.base_repository import IWeatherRepository
 from app.models.weather_data import WeatherData
@@ -34,6 +36,7 @@ class WindyRepository(IWeatherRepository):
         Args:
             api_key: API key de Windy. Si es None, busca en variables de entorno.
             default_model: Modelo por defecto ('ecmwf', 'gfs', 'icon')
+                          ECMWF recomendado para Córdoba (física no hidrostática, mejor resolución)
         """
         self.api_key = api_key or os.getenv("WINDY_API_KEY")
         if not self.api_key:
@@ -47,6 +50,8 @@ class WindyRepository(IWeatherRepository):
         self.default_model = default_model
         self.base_url = "https://api.windy.com/api/point-forecast/v2"
         self.timeout = HTTP_TIMEOUT
+        
+        logger.info(f"WindyRepository inicializado con modelo: {default_model.upper()}")
 
     def get_current_weather(
         self, latitude: float, longitude: float, model: Optional[str] = None
@@ -63,31 +68,70 @@ class WindyRepository(IWeatherRepository):
             WeatherData con condiciones actuales o None si hay error
         """
         model = model or self.default_model
+        
+        # Retry con backoff exponencial para errores DNS/red
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}"
+                params = {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "model": model,
+                    "key": self.api_key,
+                }
 
-        try:
-            url = f"{self.base_url}"
-            params = {
-                "lat": latitude,
-                "lon": longitude,
-                "model": model,
-                "key": self.api_key,
-            }
+                logger.info(
+                    f"Obteniendo datos actuales de Windy ({model.upper()}) para ({latitude}, {longitude}) - Intento {attempt + 1}/{max_retries}"
+                )
+                response = requests.get(url, params=params, timeout=self.timeout)
+                
+                logger.info(f"Windy response status: {response.status_code}")
+                response.raise_for_status()
 
-            logger.debug(
-                f"Obteniendo datos actuales de Windy ({model}) para ({latitude}, {longitude})"
-            )
-            response = requests.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
+                data = response.json()
+                result = self._extract_current_weather(data, latitude, longitude, model)
+                if result:
+                    logger.info(f"Datos actuales extraídos exitosamente de Windy ({model.upper()})")
+                else:
+                    logger.warning(f"No se pudieron extraer datos actuales de Windy ({model.upper()})")
+                return result
 
-            data = response.json()
-            return self._extract_current_weather(data, latitude, longitude, model)
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error obteniendo datos actuales de Windy: {e}")
-            raise WeatherAPIError(f"Error en API Windy: {e}") from e
-        except Exception as e:
-            logger.error(f"Error inesperado obteniendo datos actuales: {e}")
-            return None
+            except ConnectionError as e:
+                # Error DNS o conexión - retry con backoff
+                error_msg = str(e)
+                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    logger.warning(
+                        f"Error DNS al conectar con Windy (intento {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        continue
+                    else:
+                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        return None
+                else:
+                    logger.error(f"Error de conexión con Windy: {e}")
+                    return None
+                    
+            except Timeout as e:
+                logger.error(f"Timeout obteniendo datos actuales de Windy: {e}")
+                return None  # No retry para timeouts
+                
+            except RequestException as e:
+                # Otros errores HTTP (401, 403, 500, etc.) - no retry
+                logger.error(f"Error HTTP obteniendo datos actuales de Windy: {e}")
+                if hasattr(e, 'response') and e.response is not None:
+                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                return None
+                
+            except Exception as e:
+                logger.error(f"Error inesperado obteniendo datos actuales: {e}")
+                return None
+        
+        return None
 
     def get_forecast(
         self,
@@ -109,31 +153,68 @@ class WindyRepository(IWeatherRepository):
             Lista de WeatherData con pronóstico
         """
         model = model or self.default_model
+        
+        # Retry con backoff exponencial para errores DNS/red
+        max_retries = 3
+        retry_delay = 1  # segundos
+        
+        for attempt in range(max_retries):
+            try:
+                url = f"{self.base_url}"
+                params = {
+                    "lat": latitude,
+                    "lon": longitude,
+                    "model": model,
+                    "key": self.api_key,
+                }
 
-        try:
-            url = f"{self.base_url}"
-            params = {
-                "lat": latitude,
-                "lon": longitude,
-                "model": model,
-                "key": self.api_key,
-            }
+                logger.info(
+                    f"Obteniendo pronóstico de Windy ({model.upper()}) para ({latitude}, {longitude}), {hours}h - Intento {attempt + 1}/{max_retries}"
+                )
+                response = requests.get(url, params=params, timeout=self.timeout)
+                
+                logger.info(f"Windy forecast response status: {response.status_code}")
+                response.raise_for_status()
 
-            logger.debug(
-                f"Obteniendo pronóstico de Windy ({model}) para ({latitude}, {longitude}), {hours}h"
-            )
-            response = requests.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
+                data = response.json()
+                forecast = self._extract_forecast(data, latitude, longitude, hours, model)
 
-            data = response.json()
-            forecast = self._extract_forecast(data, latitude, longitude, hours, model)
+                logger.info(f"Pronóstico obtenido: {len(forecast)} puntos de Windy ({model.upper()})")
+                return forecast
 
-            logger.info(f"Pronóstico obtenido: {len(forecast)} puntos")
-            return forecast
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error obteniendo pronóstico de Windy: {e}")
-            raise WeatherAPIError(f"Error en API Windy: {e}") from e
+            except ConnectionError as e:
+                # Error DNS o conexión - retry con backoff
+                error_msg = str(e)
+                if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    logger.warning(
+                        f"Error DNS al conectar con Windy (intento {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                        continue
+                    else:
+                        logger.error(f"Error DNS persistente después de {max_retries} intentos: {e}")
+                        return []
+                else:
+                    logger.error(f"Error de conexión con Windy: {e}")
+                    return []
+                    
+            except Timeout as e:
+                logger.error(f"Timeout obteniendo pronóstico de Windy: {e}")
+                return []  # No retry para timeouts
+                
+            except RequestException as e:
+                # Otros errores HTTP (401, 403, 500, etc.) - no retry
+                logger.error(f"Error HTTP obteniendo pronóstico de Windy: {e}")
+                if hasattr(e, 'response') and e.response is not None:
+                    logger.error(f"Status code: {e.response.status_code}, Response: {e.response.text[:200]}")
+                return []
+                
+            except Exception as e:
+                logger.error(f"Error inesperado obteniendo pronóstico: {e}")
+                return []
+        
+        return []
 
     def get_historical(
         self,

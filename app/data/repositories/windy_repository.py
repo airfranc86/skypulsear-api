@@ -26,17 +26,21 @@ class WindyRepository(IWeatherRepository):
     - ICON (ICOsahedral Nonhydrostatic)
     """
 
-    # Modelos disponibles en Windy API
-    AVAILABLE_MODELS = ["ecmwf", "gfs", "icon"]
+    # Modelos disponibles en Windy API según documentación oficial
+    # Para Argentina/Córdoba: usar GFS o cams (modelos globales)
+    AVAILABLE_MODELS = ["gfs", "cams", "iconEu", "arome", "namConus", "namHawaii", "namAlaska", "gfsWave"]
+    
+    # Modelos globales recomendados para Argentina
+    GLOBAL_MODELS = ["gfs", "cams"]
 
-    def __init__(self, api_key: Optional[str] = None, default_model: str = "ecmwf"):
+    def __init__(self, api_key: Optional[str] = None, default_model: str = "gfs"):
         """
         Inicializar repositorio Windy.
 
         Args:
             api_key: API key de Windy. Si es None, busca en variables de entorno.
-            default_model: Modelo por defecto ('ecmwf', 'gfs', 'icon')
-                          ECMWF recomendado para Córdoba (física no hidrostática, mejor resolución)
+            default_model: Modelo por defecto ('gfs', 'cams', etc.)
+                          GFS recomendado para Argentina (modelo global, actualizaciones frecuentes)
         """
         self.api_key = api_key or os.getenv("WINDY_API_KEY")
         if not self.api_key:
@@ -50,6 +54,10 @@ class WindyRepository(IWeatherRepository):
         self.default_model = default_model
         self.base_url = "https://api.windy.com/api/point-forecast/v2"
         self.timeout = HTTP_TIMEOUT
+        
+        # Parámetros meteorológicos a solicitar
+        self.parameters = ["temp", "dewpoint", "precip", "wind", "windGust", "pressure", "rh", "lclouds", "mclouds", "hclouds"]
+        self.levels = ["surface"]  # Nivel de superficie por defecto
         
         logger.info(f"WindyRepository inicializado con modelo: {default_model.upper()}")
 
@@ -76,17 +84,20 @@ class WindyRepository(IWeatherRepository):
         for attempt in range(max_retries):
             try:
                 url = f"{self.base_url}"
-                params = {
+                # Windy API requiere POST con JSON body según documentación
+                payload = {
                     "lat": latitude,
                     "lon": longitude,
                     "model": model,
+                    "parameters": self.parameters,
+                    "levels": self.levels,
                     "key": self.api_key,
                 }
 
                 logger.info(
                     f"Obteniendo datos actuales de Windy ({model.upper()}) para ({latitude}, {longitude}) - Intento {attempt + 1}/{max_retries}"
                 )
-                response = requests.get(url, params=params, timeout=self.timeout)
+                response = requests.post(url, json=payload, timeout=self.timeout, headers={"Content-Type": "application/json"})
                 
                 logger.info(f"Windy response status: {response.status_code}")
                 response.raise_for_status()
@@ -161,17 +172,20 @@ class WindyRepository(IWeatherRepository):
         for attempt in range(max_retries):
             try:
                 url = f"{self.base_url}"
-                params = {
+                # Windy API requiere POST con JSON body según documentación
+                payload = {
                     "lat": latitude,
                     "lon": longitude,
                     "model": model,
+                    "parameters": self.parameters,
+                    "levels": self.levels,
                     "key": self.api_key,
                 }
 
                 logger.info(
                     f"Obteniendo pronóstico de Windy ({model.upper()}) para ({latitude}, {longitude}), {hours}h - Intento {attempt + 1}/{max_retries}"
                 )
-                response = requests.get(url, params=params, timeout=self.timeout)
+                response = requests.post(url, json=payload, timeout=self.timeout, headers={"Content-Type": "application/json"})
                 
                 logger.info(f"Windy forecast response status: {response.status_code}")
                 response.raise_for_status()
@@ -306,55 +320,64 @@ class WindyRepository(IWeatherRepository):
     def _extract_current_weather(
         self, data: Dict[str, Any], latitude: float, longitude: float, model: str
     ) -> Optional[WeatherData]:
-        """Extraer datos actuales de la respuesta de Windy."""
+        """
+        Extraer datos actuales de la respuesta de Windy.
+        
+        Formato de respuesta según documentación:
+        - ts: array de timestamps (milliseconds desde epoch)
+        - temp-surface: array de temperaturas
+        - wind_u-surface, wind_v-surface: componentes del viento
+        - past3hprecip-surface: precipitación acumulada 3h
+        - pressure-surface: presión
+        - rh-surface: humedad relativa
+        - lclouds-surface, mclouds-surface, hclouds-surface: cobertura de nubes
+        """
         try:
-            # Estructura de respuesta de Windy puede variar
-            # Ajustar según documentación oficial
-            # Ejemplo de estructura esperada:
-            current = (
-                data.get("current", {}) or data.get("ts", [{}])[0]
-                if data.get("ts")
-                else {}
-            )
-
-            if not current:
-                logger.warning("No se encontraron datos actuales en respuesta de Windy")
+            # Obtener timestamps (milliseconds desde epoch)
+            ts_array = data.get("ts", [])
+            if not ts_array or len(ts_array) == 0:
+                logger.warning("No se encontraron timestamps en respuesta de Windy")
                 return None
 
-            timestamp_str = current.get("time") or current.get("datetime")
-            if timestamp_str:
-                try:
-                    timestamp = datetime.fromisoformat(
-                        timestamp_str.replace("Z", "+00:00")
-                    )
-                except (ValueError, AttributeError):
-                    timestamp = datetime.now()
-            else:
-                timestamp = datetime.now()
+            # Usar el primer timestamp para datos actuales
+            timestamp_ms = ts_array[0]
+            timestamp = datetime.fromtimestamp(timestamp_ms / 1000.0)
 
-            # Extraer variables meteorológicas
-            # Ajustar nombres de campos según estructura real de Windy API
-            temperature = current.get("temp") or current.get("temperature")
-            wind_speed = (
-                current.get("windSpeed")
-                or current.get("wind_speed")
-                or current.get("ws")
-            )
-            wind_direction = (
-                current.get("windDir")
-                or current.get("wind_direction")
-                or current.get("wd")
-            )
-            precipitation = (
-                current.get("precip")
-                or current.get("precipitation")
-                or current.get("prcp")
-            )
-            cloud_cover = (
-                current.get("cloudCover")
-                or current.get("cloud_cover")
-                or current.get("cld")
-            )
+            # Extraer arrays de datos (índice 0 = datos actuales)
+            temp_array = data.get("temp-surface", [])
+            wind_u_array = data.get("wind_u-surface", [])
+            wind_v_array = data.get("wind_v-surface", [])
+            precip_array = data.get("past3hprecip-surface", [])
+            pressure_array = data.get("pressure-surface", [])
+            rh_array = data.get("rh-surface", [])
+            lclouds_array = data.get("lclouds-surface", [])
+            mclouds_array = data.get("mclouds-surface", [])
+            hclouds_array = data.get("hclouds-surface", [])
+
+            # Extraer valores del índice 0
+            temperature = temp_array[0] if temp_array and len(temp_array) > 0 else None
+            
+            # Calcular velocidad y dirección del viento desde componentes u y v
+            wind_speed = None
+            wind_direction = None
+            if wind_u_array and wind_v_array and len(wind_u_array) > 0 and len(wind_v_array) > 0:
+                u = wind_u_array[0]
+                v = wind_v_array[0]
+                if u is not None and v is not None:
+                    wind_speed = (u**2 + v**2)**0.5  # Magnitud del vector
+                    # Dirección en grados (0 = Norte, 90 = Este)
+                    wind_direction = (270 - (180 / 3.14159) * (v / u if u != 0 else 0)) % 360
+            
+            precipitation = precip_array[0] if precip_array and len(precip_array) > 0 else None
+            
+            # Calcular cobertura total de nubes (suma de baja, media y alta)
+            cloud_cover = None
+            if (lclouds_array and mclouds_array and hclouds_array and 
+                len(lclouds_array) > 0 and len(mclouds_array) > 0 and len(hclouds_array) > 0):
+                lc = lclouds_array[0] or 0
+                mc = mclouds_array[0] or 0
+                hc = hclouds_array[0] or 0
+                cloud_cover = min(100, lc + mc + hc)  # Máximo 100%
 
             return WeatherData(
                 timestamp=timestamp,
@@ -368,7 +391,7 @@ class WindyRepository(IWeatherRepository):
                 longitude=longitude,
             )
         except Exception as e:
-            logger.error(f"Error extrayendo datos actuales de Windy: {e}")
+            logger.error(f"Error extrayendo datos actuales de Windy: {e}", exc_info=True)
             return None
 
     def _extract_forecast(
@@ -379,81 +402,77 @@ class WindyRepository(IWeatherRepository):
         hours: int,
         model: str,
     ) -> List[WeatherData]:
-        """Extraer pronóstico de la respuesta de Windy."""
+        """
+        Extraer pronóstico de la respuesta de Windy.
+        
+        Formato: arrays paralelos donde cada índice corresponde a un timestamp.
+        """
         forecast = []
 
         try:
-            # Estructura de respuesta puede ser:
-            # - data["ts"]: lista de timestamps
-            # - data["hourly"]: datos horarios
-            # - data["forecast"]: pronóstico
-            hourly_data = (
-                data.get("ts", [])
-                or data.get("hourly", {}).get("data", [])
-                or data.get("forecast", [])
-            )
-
-            if not hourly_data:
-                logger.warning(
-                    "No se encontraron datos de pronóstico en respuesta de Windy"
-                )
+            # Obtener timestamps
+            ts_array = data.get("ts", [])
+            if not ts_array or len(ts_array) == 0:
+                logger.warning("No se encontraron timestamps en respuesta de Windy")
                 return forecast
 
-            for item in hourly_data[:hours]:
-                weather_data = self._extract_hourly_weather(
-                    item, latitude, longitude, model
+            # Limitar a las horas solicitadas
+            num_points = min(len(ts_array), hours)
+            
+            # Extraer arrays de datos
+            temp_array = data.get("temp-surface", [])
+            wind_u_array = data.get("wind_u-surface", [])
+            wind_v_array = data.get("wind_v-surface", [])
+            precip_array = data.get("past3hprecip-surface", [])
+            lclouds_array = data.get("lclouds-surface", [])
+            mclouds_array = data.get("mclouds-surface", [])
+            hclouds_array = data.get("hclouds-surface", [])
+
+            # Iterar sobre cada punto temporal
+            for i in range(num_points):
+                timestamp_ms = ts_array[i]
+                timestamp = datetime.fromtimestamp(timestamp_ms / 1000.0)
+
+                # Extraer valores del índice i
+                temperature = temp_array[i] if temp_array and i < len(temp_array) else None
+                
+                # Calcular velocidad y dirección del viento
+                wind_speed = None
+                wind_direction = None
+                if (wind_u_array and wind_v_array and 
+                    i < len(wind_u_array) and i < len(wind_v_array)):
+                    u = wind_u_array[i]
+                    v = wind_v_array[i]
+                    if u is not None and v is not None:
+                        wind_speed = (u**2 + v**2)**0.5
+                        wind_direction = (270 - (180 / 3.14159) * (v / u if u != 0 else 0)) % 360
+                
+                precipitation = precip_array[i] if precip_array and i < len(precip_array) else None
+                
+                # Cobertura total de nubes
+                cloud_cover = None
+                if (lclouds_array and mclouds_array and hclouds_array and
+                    i < len(lclouds_array) and i < len(mclouds_array) and i < len(hclouds_array)):
+                    lc = lclouds_array[i] or 0
+                    mc = mclouds_array[i] or 0
+                    hc = hclouds_array[i] or 0
+                    cloud_cover = min(100, lc + mc + hc)
+
+                weather_data = WeatherData(
+                    timestamp=timestamp,
+                    temperature=temperature,
+                    wind_speed=wind_speed,
+                    wind_direction=wind_direction,
+                    precipitation=precipitation,
+                    cloud_cover=cloud_cover,
+                    source=f"Windy-{model.upper()}",
+                    latitude=latitude,
+                    longitude=longitude,
                 )
-                if weather_data:
-                    forecast.append(weather_data)
+                forecast.append(weather_data)
 
         except Exception as e:
-            logger.error(f"Error extrayendo pronóstico de Windy: {e}")
+            logger.error(f"Error extrayendo pronóstico de Windy: {e}", exc_info=True)
 
         return forecast
 
-    def _extract_hourly_weather(
-        self, item: Dict[str, Any], latitude: float, longitude: float, model: str
-    ) -> Optional[WeatherData]:
-        """Extraer datos horarios de la respuesta de Windy."""
-        try:
-            timestamp_str = item.get("time") or item.get("datetime") or item.get("date")
-            if timestamp_str:
-                try:
-                    timestamp = datetime.fromisoformat(
-                        timestamp_str.replace("Z", "+00:00")
-                    )
-                except (ValueError, AttributeError):
-                    return None
-            else:
-                return None
-
-            # Extraer variables meteorológicas
-            # Ajustar nombres de campos según estructura real de Windy API
-            temperature = item.get("temp") or item.get("temperature")
-            wind_speed = (
-                item.get("windSpeed") or item.get("wind_speed") or item.get("ws")
-            )
-            wind_direction = (
-                item.get("windDir") or item.get("wind_direction") or item.get("wd")
-            )
-            precipitation = (
-                item.get("precip") or item.get("precipitation") or item.get("prcp")
-            )
-            cloud_cover = (
-                item.get("cloudCover") or item.get("cloud_cover") or item.get("cld")
-            )
-
-            return WeatherData(
-                timestamp=timestamp,
-                temperature=temperature,
-                wind_speed=wind_speed,
-                wind_direction=wind_direction,
-                precipitation=precipitation,
-                cloud_cover=cloud_cover,
-                source=f"Windy-{model.upper()}",
-                latitude=latitude,
-                longitude=longitude,
-            )
-        except Exception as e:
-            logger.error(f"Error extrayendo datos horarios de Windy: {e}")
-            return None

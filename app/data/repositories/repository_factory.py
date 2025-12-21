@@ -135,18 +135,16 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     # Windy
     try:
         if os.getenv("WINDY_API_KEY"):
-            # Crear repositorios para cada modelo de Windy
-            windy_ecmwf = create_repository("windy", default_model="ecmwf")
-            repositories["Windy-ECMWF"] = windy_ecmwf
-            logger.info("Repositorio Windy-ECMWF creado")
-
+            # Crear repositorios para modelos globales (aplicables a Argentina)
+            # GFS: modelo global, actualizaciones frecuentes
             windy_gfs = create_repository("windy", default_model="gfs")
             repositories["Windy-GFS"] = windy_gfs
             logger.info("Repositorio Windy-GFS creado")
 
-            windy_icon = create_repository("windy", default_model="icon")
-            repositories["Windy-ICON"] = windy_icon
-            logger.info("Repositorio Windy-ICON creado")
+            # CAMS: modelo global de calidad del aire y meteorología
+            windy_cams = create_repository("windy", default_model="cams")
+            repositories["Windy-CAMS"] = windy_cams
+            logger.info("Repositorio Windy-CAMS creado")
     except Exception as e:
         logger.warning(f"No se pudo crear repositorio Windy: {e}")
 

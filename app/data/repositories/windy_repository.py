@@ -131,6 +131,10 @@ class WindyRepository(IWeatherRepository):
                 response.raise_for_status()
 
                 data = response.json()
+                # Log para debugging: ver qué claves tiene la respuesta
+                logger.debug(
+                    f"Windy ({model}) response keys: {list(data.keys())[:15]}"
+                )
                 result = self._extract_current_weather(data, latitude, longitude, model)
                 if result:
                     logger.info(
@@ -391,7 +395,10 @@ class WindyRepository(IWeatherRepository):
             # Obtener timestamps (milliseconds desde epoch)
             ts_array = data.get("ts", [])
             if not ts_array or len(ts_array) == 0:
-                logger.warning("No se encontraron timestamps en respuesta de Windy")
+                logger.warning(
+                    f"No se encontraron timestamps en respuesta de Windy ({model}). "
+                    f"Claves disponibles: {list(data.keys())[:10]}"
+                )
                 return None
 
             # Usar el primer timestamp para datos actuales

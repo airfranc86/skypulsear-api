@@ -11,7 +11,7 @@ services:
       apt-get update && apt-get install -y libhdf5-dev libnetcdf-dev && \
       pip install --upgrade pip && \
       pip install numpy>=1.26.0 && \
-      pip install --no-build-isolation netCDF4>=1.6.0 && \
+      PIP_BUILD_ISOLATION=false pip install netCDF4>=1.6.0 && \
       pip install -r requirements.txt
     startCommand: uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health

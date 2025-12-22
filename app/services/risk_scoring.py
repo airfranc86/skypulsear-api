@@ -465,7 +465,12 @@ class RiskScoringService:
         return 0
 
     def _calculate_storm_risk(self, forecasts: list[UnifiedForecast]) -> float:
-        """Calcula riesgo por tormentas eléctricas/rayos basado en weather_code.
+        """Calcula riesgo por tormentas eléctricas/rayos.
+
+        Usa múltiples indicadores:
+        1. Weather codes WMO (95, 96, 99) - si están disponibles
+        2. Datos de WRF-SMN - precipitación convectiva (RAINC) indica tormentas
+        3. Patrones de precipitación + humedad alta - indicador secundario
 
         Weather codes con tormentas (WMO):
         - 95: Tormenta ligera o moderada
@@ -473,19 +478,68 @@ class RiskScoringService:
         - 99: Tormenta severa con granizo
         """
         storm_codes = {95, 96, 99}
+        max_risk = 0.0
 
         for forecast in forecasts:
+            # Método 1: Weather codes WMO (más confiable si está disponible)
             weather_code = getattr(forecast, "weather_code", None)
             if weather_code in storm_codes:
-                # Tormenta detectada - riesgo alto
                 if weather_code == 99:
-                    return 100  # Tormenta severa
+                    return 100.0  # Tormenta severa - riesgo máximo
                 elif weather_code == 96:
-                    return 80  # Tormenta con granizo
+                    max_risk = max(max_risk, 80.0)  # Tormenta con granizo
                 else:
-                    return 60  # Tormenta normal
+                    max_risk = max(max_risk, 60.0)  # Tormenta normal
 
-        return 0
+            # Método 2: Detección basada en WRF-SMN (precipitación convectiva)
+            # WRF-SMN tiene variable RAINC (precipitación convectiva) que es indicador directo
+            # Si la fuente es WRF-SMN y hay precipitación, es probable que sea convectiva
+            sources = getattr(forecast, "sources_used", [])
+            has_wrf_smn = any(
+                (
+                    source.value == "wrf_smn"
+                    if hasattr(source, "value")
+                    else source == "wrf_smn"
+                )
+                for source in sources
+            )
+
+            if has_wrf_smn:
+                # WRF-SMN con alta precipitación indica tormenta convectiva
+                precip = forecast.precipitation_mm or 0.0
+                humidity = forecast.humidity_pct or 0.0
+
+                # Precipitación alta (>10mm/h) con humedad alta (>70%) = tormenta probable
+                if precip >= 10.0 and humidity >= 70.0:
+                    # Escalar riesgo según intensidad de precipitación
+                    if precip >= 30.0:
+                        max_risk = max(max_risk, 90.0)  # Tormenta severa
+                    elif precip >= 20.0:
+                        max_risk = max(max_risk, 75.0)  # Tormenta moderada-severa
+                    else:
+                        max_risk = max(max_risk, 55.0)  # Tormenta moderada
+
+                # Precipitación moderada (5-10mm/h) con condiciones propicias
+                elif precip >= 5.0 and humidity >= 75.0:
+                    max_risk = max(max_risk, 40.0)  # Riesgo moderado de tormenta
+
+            # Método 3: Indicadores secundarios (precipitación + humedad alta)
+            # Aplicar solo si no hay datos de WRF-SMN
+            elif not has_wrf_smn:
+                precip = forecast.precipitation_mm or 0.0
+                humidity = forecast.humidity_pct or 0.0
+                temp = forecast.temperature_celsius or 25.0
+
+                # Condiciones propicias para tormentas:
+                # - Precipitación alta (>15mm/h)
+                # - Humedad muy alta (>80%)
+                # - Temperatura moderada-alta (15-35°C)
+                if precip >= 15.0 and humidity >= 80.0 and 15.0 <= temp <= 35.0:
+                    max_risk = max(max_risk, 50.0)  # Riesgo moderado
+                elif precip >= 8.0 and humidity >= 75.0 and 18.0 <= temp <= 32.0:
+                    max_risk = max(max_risk, 30.0)  # Riesgo bajo-moderado
+
+        return max_risk
 
     def _calculate_hail_risk(self, forecasts: list[UnifiedForecast]) -> float:
         """Calcula riesgo de granizo basado en weather_code y temperatura.

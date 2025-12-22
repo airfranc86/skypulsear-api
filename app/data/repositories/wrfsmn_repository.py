@@ -9,6 +9,9 @@ from typing import List, Optional, Dict, Any
 from datetime import UTC, datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
+import s3fs
+import xarray as xr
+import numpy as np
 
 from app.data.repositories.base_repository import IWeatherRepository
 from app.models.weather_data import WeatherData
@@ -30,12 +33,18 @@ class WRFSMNRepository(IWeatherRepository):
     """
 
     # AWS S3 bucket para WRF-SMN Open Data
-    AWS_BUCKET = "noaa-wrf-smn"
-    AWS_REGION = "us-east-1"
+    # NOTA: El bucket correcto es "smn-ar-wrf" según documentación oficial
+    # Referencia: https://registry.opendata.aws/smn-ar-wrf-dataset/
+    AWS_BUCKET = "smn-ar-wrf"
+    AWS_REGION = "us-west-2"  # Región correcta según documentación
 
     # Estructura de archivos en S3
-    # Formato: s3://noaa-wrf-smn/wrf-smn/{YYYY}/{MM}/{DD}/{HH}/wrf-smn-{timestamp}.nc
-    S3_PREFIX = "wrf-smn"
+    # Formato: s3://smn-ar-wrf/DATA/WRF/DET/{YYYY}/{MM}/{DD}/{HH}/WRFDETAR_01H_{YYYYMMDD}_{HH}_{forecast_hour}.nc
+    # Ejemplo: s3://smn-ar-wrf/DATA/WRF/DET/2022/03/21/00/WRFDETAR_01H_20220321_00_002.nc
+    # Donde:
+    #   - {YYYY}/{MM}/{DD}/{HH} = Fecha y hora de inicialización del modelo
+    #   - {forecast_hour} = Hora de pronóstico (000, 001, 002, ..., 072)
+    S3_PREFIX = "DATA/WRF/DET"
 
     def __init__(self, use_meteosource_fallback: bool = True, cache_ttl_hours: int = 6):
         """
@@ -48,27 +57,15 @@ class WRFSMNRepository(IWeatherRepository):
         self.use_meteosource_fallback = use_meteosource_fallback
         self.cache_ttl_hours = cache_ttl_hours
 
-        # Intentar configurar cliente S3
-        self.s3_client = None
+        # Configurar acceso a S3 (Open Data - acceso anónimo)
+        self.s3_fs = None
         try:
-            # AWS credentials opcionales (Open Data puede no requerirlas)
-            aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-            aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-
-            if aws_access_key and aws_secret_key:
-                self.s3_client = boto3.client(
-                    "s3",
-                    region_name=self.AWS_REGION,
-                    aws_access_key_id=aws_access_key,
-                    aws_secret_access_key=aws_secret_key,
-                )
-            else:
-                # Intentar sin credenciales (Open Data puede funcionar)
-                self.s3_client = boto3.client("s3", region_name=self.AWS_REGION)
-                logger.info("Cliente S3 configurado sin credenciales (Open Data)")
+            # s3fs permite acceso anónimo a Open Data sin credenciales
+            self.s3_fs = s3fs.S3FileSystem(anon=True)
+            logger.info("S3FileSystem configurado para acceso anónimo (Open Data)")
         except Exception as e:
-            logger.warning(f"No se pudo configurar cliente S3: {e}")
-            self.s3_client = None
+            logger.warning(f"No se pudo configurar S3FileSystem: {e}")
+            self.s3_fs = None
 
         # Cliente Meteosource como fallback
         self.meteosource_repo = None
@@ -242,15 +239,27 @@ class WRFSMNRepository(IWeatherRepository):
         Returns:
             WeatherData o None si hay error
         """
-        if not self.s3_client:
+        if not self.s3_fs:
             return None
 
-        # Construir clave S3
+        # Construir clave S3 con formato correcto de WRF-SMN
         init_date = forecast_time.replace(
             hour=init_hour, minute=0, second=0, microsecond=0
         )
+
+        # Calcular forecast_hour (diferencia entre forecast_time e init_time)
+        forecast_hour = int((forecast_time - init_date).total_seconds() / 3600)
+
+        # Validar que forecast_hour esté en rango válido (0-72)
+        if forecast_hour < 0 or forecast_hour > 72:
+            logger.warning(f"Forecast hour {forecast_hour} fuera de rango (0-72)")
+            return None
+
+        # Formato: WRFDETAR_01H_{YYYYMMDD}_{HH}_{forecast_hour:03d}.nc
+        # Ejemplo: WRFDETAR_01H_20220321_00_002.nc
         date_str = init_date.strftime("%Y/%m/%d/%H")
-        s3_key = f"{self.S3_PREFIX}/{date_str}/wrf-smn-{init_date.isoformat()}.nc"
+        filename = f"WRFDETAR_01H_{init_date.strftime('%Y%m%d')}_{init_hour:02d}_{forecast_hour:03d}.nc"
+        s3_key = f"{self.S3_PREFIX}/{date_str}/{filename}"
 
         # Verificar cache
         cache_key = f"{s3_key}_{latitude}_{longitude}"
@@ -262,20 +271,44 @@ class WRFSMNRepository(IWeatherRepository):
                 return cached_data
 
         try:
-            # Descargar archivo NetCDF desde S3
-            # Nota: Esto requiere netCDF4 y xarray (agregar a requirements.txt)
-            # Por ahora, retornar None y usar fallback
+            # Verificar que s3fs esté configurado
+            if not self.s3_fs:
+                logger.warning("S3FileSystem no configurado, no se puede acceder a S3")
+                return None
 
-            # TODO: Implementar lectura de NetCDF
-            # import xarray as xr
-            # with tempfile.NamedTemporaryFile(suffix='.nc', delete=False) as tmp_file:
-            #     self.s3_client.download_fileobj(self.AWS_BUCKET, s3_key, tmp_file)
-            #     ds = xr.open_dataset(tmp_file.name)
-            #     # Extraer datos para lat/lon específicos
-            #     # Convertir a WeatherData
+            # Construir ruta S3 completa
+            s3_path = f"s3://{self.AWS_BUCKET}/{s3_key}"
 
-            logger.debug(f"Lectura de NetCDF desde S3 no implementada aún: {s3_key}")
-            return None
+            logger.debug(f"Intentando leer NetCDF desde S3: {s3_path}")
+
+            # Abrir dataset directamente desde S3 (streaming, no descarga completa)
+            # s3fs permite acceso anónimo a Open Data
+            try:
+                with self.s3_fs.open(s3_path, mode="rb") as f:
+                    # Abrir con xarray (streaming, solo lee lo necesario)
+                    ds = xr.open_dataset(f, decode_times=True)
+
+                    # Extraer datos para coordenadas específicas
+                    weather_data = self._extract_weather_from_netcdf(
+                        ds, latitude, longitude, forecast_time
+                    )
+
+                    # Cerrar dataset
+                    ds.close()
+
+                    # Guardar en cache si se obtuvo datos válidos
+                    if weather_data:
+                        self._cache[cache_key] = (weather_data, datetime.now(UTC))
+                        logger.info(f"Datos WRF-SMN obtenidos desde S3: {s3_key}")
+
+                    return weather_data
+
+            except FileNotFoundError:
+                logger.warning(f"Archivo no encontrado en S3: {s3_path}")
+                return None
+            except Exception as e:
+                logger.error(f"Error leyendo NetCDF desde S3: {e}")
+                return None
 
         except ClientError as e:
             logger.warning(f"Error accediendo a S3: {e}")
@@ -302,23 +335,166 @@ class WRFSMNRepository(IWeatherRepository):
 
         Returns:
             WeatherData o None si hay error
+
+        NOTA: Esta función requiere implementación completa. Ver documentación abajo.
         """
         try:
-            # TODO: Implementar extracción de variables desde NetCDF
-            # Variables esperadas:
-            # - T2: Temperatura a 2m
-            # - RH2: Humedad relativa a 2m
-            # - U10, V10: Componentes de viento a 10m
-            # - RAINC, RAINNC: Precipitación acumulada
+            # Verificar dimensiones y variables disponibles
+            logger.debug(f"Dimensiones del dataset: {ds.dims}")
+            logger.debug(f"Variables disponibles: {list(ds.data_vars)}")
+            logger.debug(f"Coordenadas: {list(ds.coords)}")
 
-            # Ejemplo de código (requiere xarray):
-            # temp = ds.sel(lat=latitude, lon=longitude, method='nearest')['T2'].values
-            # wind_u = ds.sel(lat=latitude, lon=longitude, method='nearest')['U10'].values
-            # wind_v = ds.sel(lat=latitude, lon=longitude, method='nearest')['V10'].values
-            # wind_speed = np.sqrt(wind_u**2 + wind_v**2)
-            # wind_direction = np.arctan2(wind_v, wind_u) * 180 / np.pi
+            # Seleccionar punto más cercano a coordenadas solicitadas
+            # WRF-SMN puede tener diferentes estructuras de coordenadas
+            point = None
 
-            return None
+            # Opción 1: Si lat/lon son coordenadas 1D (más común en NetCDF estándar)
+            if "lat" in ds.coords and "lon" in ds.coords:
+                try:
+                    point = ds.sel(lat=latitude, lon=longitude, method="nearest")
+                    logger.debug(
+                        f"Punto seleccionado usando coordenadas 1D: lat={latitude}, lon={longitude}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Error seleccionando punto con coordenadas 1D: {e}")
+
+            # Opción 2: Si lat/lon son arrays 2D (grid WRF)
+            if point is None and ("XLAT" in ds or "lat" in ds.data_vars):
+                try:
+                    # Obtener grid de coordenadas
+                    if "XLAT" in ds and "XLONG" in ds:
+                        lat_grid = ds["XLAT"].values
+                        lon_grid = ds["XLONG"].values
+                    elif "lat" in ds.data_vars and "lon" in ds.data_vars:
+                        lat_grid = ds["lat"].values
+                        lon_grid = ds["lon"].values
+                    else:
+                        raise ValueError("No se encontraron coordenadas en el dataset")
+
+                    # Encontrar índice del punto más cercano
+                    # Calcular distancia euclidiana (aproximación para distancias cortas)
+                    distances = np.sqrt(
+                        (lat_grid - latitude) ** 2 + (lon_grid - longitude) ** 2
+                    )
+                    idx = np.unravel_index(np.argmin(distances), distances.shape)
+
+                    # Seleccionar punto usando índices
+                    if "south_north" in ds.dims and "west_east" in ds.dims:
+                        point = ds.isel(south_north=idx[0], west_east=idx[1])
+                    else:
+                        # Intentar con índices genéricos
+                        point = ds.isel({ds.dims[0]: idx[0], ds.dims[1]: idx[1]})
+
+                    logger.debug(f"Punto seleccionado usando grid 2D: índices {idx}")
+                except Exception as e:
+                    logger.error(f"Error seleccionando punto con grid 2D: {e}")
+                    return None
+
+            if point is None:
+                logger.error("No se pudo seleccionar punto del dataset")
+                return None
+
+            # Extraer variables meteorológicas (con manejo de errores)
+            temperature = None
+            humidity = None
+            wind_speed = None
+            wind_direction = None
+            pressure = None
+            precipitation = None
+
+            # Temperatura a 2m (convertir de Kelvin a Celsius)
+            try:
+                if "T2" in point.data_vars or "T2" in ds.data_vars:
+                    temp_k = float(point["T2"].values)
+                    temperature = temp_k - 273.15
+                    logger.debug(f"Temperatura extraída: {temperature}°C")
+            except (KeyError, IndexError, AttributeError) as e:
+                logger.warning(f"Variable T2 no encontrada o no accesible: {e}")
+
+            # Humedad relativa a 2m (%)
+            try:
+                if "RH2" in point.data_vars or "RH2" in ds.data_vars:
+                    humidity = float(point["RH2"].values)
+                    logger.debug(f"Humedad extraída: {humidity}%")
+            except (KeyError, IndexError, AttributeError) as e:
+                logger.warning(f"Variable RH2 no encontrada o no accesible: {e}")
+
+            # Componentes de viento a 10m (m/s)
+            try:
+                if ("U10" in point.data_vars or "U10" in ds.data_vars) and (
+                    "V10" in point.data_vars or "V10" in ds.data_vars
+                ):
+                    wind_u = float(point["U10"].values)
+                    wind_v = float(point["V10"].values)
+
+                    # Calcular velocidad y dirección del viento
+                    wind_speed = float(np.sqrt(wind_u**2 + wind_v**2))
+                    wind_direction = float(np.arctan2(wind_v, wind_u) * 180.0 / np.pi)
+
+                    # Normalizar dirección (0-360)
+                    if wind_direction < 0:
+                        wind_direction += 360.0
+
+                    logger.debug(
+                        f"Viento extraído: {wind_speed} m/s, dirección {wind_direction}°"
+                    )
+            except (KeyError, IndexError, AttributeError) as e:
+                logger.warning(f"Variables U10/V10 no encontradas o no accesibles: {e}")
+
+            # Presión en superficie (convertir de Pa a hPa)
+            try:
+                if "PSFC" in point.data_vars or "PSFC" in ds.data_vars:
+                    pressure_pa = float(point["PSFC"].values)
+                    pressure = pressure_pa / 100.0
+                    logger.debug(f"Presión extraída: {pressure} hPa")
+            except (KeyError, IndexError, AttributeError) as e:
+                logger.warning(f"Variable PSFC no encontrada o no accesible: {e}")
+
+            # Precipitación (sumar convectiva + no convectiva)
+            try:
+                rainc = 0.0
+                rainnc = 0.0
+
+                if "RAINC" in point.data_vars or "RAINC" in ds.data_vars:
+                    rainc = float(point["RAINC"].values)
+
+                if "RAINNC" in point.data_vars or "RAINNC" in ds.data_vars:
+                    rainnc = float(point["RAINNC"].values)
+
+                precipitation = rainc + rainnc
+                logger.debug(
+                    f"Precipitación extraída: {precipitation} mm (convectiva: {rainc}, no convectiva: {rainnc})"
+                )
+            except (KeyError, IndexError, AttributeError) as e:
+                logger.warning(
+                    f"Variables RAINC/RAINNC no encontradas o no accesibles: {e}"
+                )
+
+            # Validar que al menos tengamos datos básicos
+            if temperature is None and wind_speed is None and precipitation is None:
+                logger.warning("No se pudieron extraer datos suficientes del dataset")
+                return None
+
+            # Crear objeto WeatherData
+            weather_data = WeatherData(
+                latitude=latitude,
+                longitude=longitude,
+                timestamp=forecast_time,
+                temperature=temperature,
+                humidity=humidity,
+                wind_speed=wind_speed,
+                wind_direction=wind_direction,
+                pressure=pressure,
+                precipitation=precipitation,
+                source="WRF-SMN",
+                model="WRF-SMN",
+            )
+
+            logger.info(
+                f"Datos WRF-SMN extraídos para ({latitude}, {longitude}): "
+                f"temp={temperature}°C, viento={wind_speed} m/s, precip={precipitation} mm"
+            )
+            return weather_data
 
         except Exception as e:
             logger.error(f"Error extrayendo datos desde NetCDF: {e}")

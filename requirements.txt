@@ -1,9 +1,14 @@
-# SkyPulse - Dependencias de Producción
-# Versión: 2.0.0
+# SkyPulse - Dependencias Unificadas
+# Versión: 3.0.0
 # Fecha: 2025-12-18
+# Nota: Este archivo incluye dependencias de producción y desarrollo
+
+# ============================================================================
+# DEPENDENCIAS DE PRODUCCIÓN
+# ============================================================================
 
 # Framework API (FastAPI + Render)
-fastapi>=0.104.0
+fastapi>=0.127.0
 uvicorn>=0.24.0
 
 # Procesamiento de Datos
@@ -23,9 +28,11 @@ httpx>=0.25.0
 boto3>=1.29.0
 
 # NetCDF (para WRF-SMN - lectura de archivos NetCDF)
-# Nota: netCDF4 puede requerir HDF5 y NetCDF C libraries
-# netCDF4>=1.6.0  # Descomentar cuando se implemente lectura completa de NetCDF
-# xarray>=2023.1.0  # Descomentar cuando se implemente lectura completa de NetCDF
+# Requisitos del sistema (instalar antes de pip install):
+# - Windows: usar conda o instalar desde wheels precompilados
+netCDF4>=1.6.0  # Lectura de archivos NetCDF
+xarray>=2023.1.0  # Manipulación de datasets NetCDF
+s3fs>=2023.1.0  # Acceso directo a S3 sin descargar archivos completos (streaming)
 
 # Utilidades
 python-dotenv>=1.0.0
@@ -41,3 +48,29 @@ python-dateutil>=2.8.2
 
 # PDF Generation
 weasyprint>=65.0
+
+# ============================================================================
+# DEPENDENCIAS DE DESARROLLO
+# ============================================================================
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+
+# Calidad de Código
+black>=23.11.0
+flake8>=6.1.0
+mypy>=1.7.0
+bandit[toml]>=1.7.5
+
+# Type Stubs
+types-requests>=2.31.0
+types-python-dateutil>=2.8.19
+
+# Pre-commit
+pre-commit>=3.5.0
+
+# Rich (resuelve conflicto con reflex: requiere rich>=13,<15)
+rich>=13.0.0,<15.0.0

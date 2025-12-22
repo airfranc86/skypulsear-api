@@ -7,7 +7,7 @@ services:
     env: python
     plan: starter  # $7/mes - cambiar a 'free' para desarrollo
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install numpy>=1.26.0 && pip install -r requirements.txt
     startCommand: uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:

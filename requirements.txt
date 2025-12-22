@@ -12,8 +12,9 @@ fastapi>=0.127.0
 uvicorn>=0.24.0
 
 # Procesamiento de Datos
-pandas>=2.1.0
+# IMPORTANTE: numpy debe instalarse ANTES de netCDF4 (netCDF4 lo necesita para compilar)
 numpy>=1.26.0
+pandas>=2.1.0
 
 # Visualización (para generación de reportes)
 altair>=5.2.0
@@ -28,9 +29,11 @@ httpx>=0.25.0
 boto3>=1.29.0
 
 # NetCDF (para WRF-SMN - lectura de archivos NetCDF)
+# IMPORTANTE: netCDF4 requiere numpy instalado primero (ver arriba)
 # Requisitos del sistema (instalar antes de pip install):
+# - Linux: sudo apt-get install libhdf5-dev libnetcdf-dev (Render lo hace automáticamente)
 # - Windows: usar conda o instalar desde wheels precompilados
-netCDF4>=1.6.0  # Lectura de archivos NetCDF
+netCDF4>=1.6.0  # Lectura de archivos NetCDF (requiere numpy)
 xarray>=2023.1.0  # Manipulación de datasets NetCDF
 s3fs>=2023.1.0  # Acceso directo a S3 sin descargar archivos completos (streaming)
 

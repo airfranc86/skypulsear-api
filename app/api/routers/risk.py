@@ -2,20 +2,21 @@
 Router de cálculo de riesgo por perfil.
 """
 
-import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from app.services import (
-    RiskScoringService,
-    UserProfile,
-    UnifiedWeatherEngine,
-    PatternDetector,
     AlertService,
+    PatternDetector,
+    RiskScoringService,
+    UnifiedWeatherEngine,
+    UserProfile,
 )
+from app.utils.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -47,7 +48,9 @@ class RiskScoreResponse(BaseModel):
 
 
 @router.post("/risk-score", response_model=RiskScoreResponse)
-async def calculate_risk_score(request: RiskScoreRequest) -> RiskScoreResponse:
+async def calculate_risk_score(
+    http_request: Request, request: RiskScoreRequest
+) -> RiskScoreResponse:
     """
     Calcula el risk score para un perfil específico.
     
@@ -87,7 +90,18 @@ async def calculate_risk_score(request: RiskScoreRequest) -> RiskScoreResponse:
                 detail=f"Perfil no válido. Opciones: {list(profile_map.keys())}",
             )
         
-        logger.info(f"Calculando risk score para perfil {profile.value} en ({request.lat}, {request.lon})")
+        correlation_id = getattr(http_request.state, "correlation_id", None)
+        
+        logger.info(
+            "Calculando risk score",
+            extra={
+                "profile": profile.value,
+                "latitude": request.lat,
+                "longitude": request.lon,
+                "hours_ahead": request.hours_ahead,
+                "correlation_id": correlation_id,
+            },
+        )
         
         # 1. Obtener pronóstico fusionado
         engine = UnifiedWeatherEngine()
@@ -166,6 +180,20 @@ async def calculate_risk_score(request: RiskScoreRequest) -> RiskScoreResponse:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error calculando risk score: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        correlation_id = getattr(http_request.state, "correlation_id", None)
+        
+        logger.error(
+            "Error calculando risk score",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "profile": request.profile,
+                "latitude": request.lat,
+                "longitude": request.lon,
+                "correlation_id": correlation_id,
+            },
+            exc_info=True,
+        )
+        # No exponer detalles internos - el exception handler global se encargará
+        raise
 

@@ -3,9 +3,13 @@ Router de health check para Render.
 """
 
 import os
+
 from fastapi import APIRouter
 
 from app.data.repositories.repository_factory import RepositoryFactory
+from app.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -52,6 +56,14 @@ async def debug_repositories() -> dict:
                 else:
                     repos_status[name] = "⚠️ Sin datos"
             except Exception as e:
+                logger.warning(
+                    "Error al verificar repositorio",
+                    extra={
+                        "repository": name,
+                        "error_type": type(e).__name__,
+                        "error_message": str(e)[:100],
+                    },
+                )
                 repos_status[name] = f"❌ Error: {str(e)[:100]}"
 
         return {
@@ -60,7 +72,15 @@ async def debug_repositories() -> dict:
             "environment_variables": env_status,
         }
     except Exception as e:
+        logger.error(
+            "Error en debug de repositorios",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            },
+            exc_info=True,
+        )
         return {
-            "error": str(e),
-            "message": "Error al inicializar repositorios",
+            "error": "Error al inicializar repositorios",
+            "message": "Ver logs para más detalles",
         }

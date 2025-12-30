@@ -13,6 +13,7 @@ uvicorn>=0.24.0
 
 # Procesamiento de Datos
 # IMPORTANTE: numpy debe instalarse ANTES de netCDF4 (netCDF4 lo necesita para compilar)
+# El orden en requirements.txt no garantiza el orden de instalación, por eso se maneja en buildCommand
 numpy>=1.26.0
 pandas>=2.1.0
 
@@ -40,6 +41,9 @@ s3fs>=2023.1.0  # Acceso directo a S3 sin descargar archivos completos (streamin
 # Utilidades
 python-dotenv>=1.0.0
 pydantic>=2.5.0
+
+# Observabilidad
+prometheus-client>=0.19.0
 
 # Meteosource (opcional - wrapper oficial de la API)
 # pymeteosource>=1.0.0  # Descomentar si se prefiere usar el wrapper oficial

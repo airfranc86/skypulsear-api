@@ -2,15 +2,16 @@
 Router de endpoints meteorológicos.
 """
 
-import logging
 from typing import Optional
-from fastapi import APIRouter, Query, HTTPException
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from app.services import UnifiedWeatherEngine
 from app.data.schemas.normalized_weather import UnifiedForecast
+from app.services import UnifiedWeatherEngine
+from app.utils.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -44,6 +45,7 @@ class ForecastResponse(BaseModel):
 
 @router.get("/current", response_model=CurrentWeatherResponse)
 async def get_current_weather(
+    request: Request,
     lat: float = Query(..., description="Latitud", ge=-90, le=90),
     lon: float = Query(..., description="Longitud", ge=-180, le=180),
 ) -> CurrentWeatherResponse:
@@ -54,16 +56,36 @@ async def get_current_weather(
     Retorna el pronóstico más cercano a la hora actual (forecast_hour=0).
     """
     try:
-        logger.info(f"Obteniendo datos actuales para ({lat}, {lon})")
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.info(
+            "Obteniendo datos actuales",
+            extra={
+                "latitude": lat,
+                "longitude": lon,
+                "correlation_id": correlation_id,
+            },
+        )
 
         # Verificar repositorios disponibles
         from app.data.repositories.repository_factory import RepositoryFactory
         factory = RepositoryFactory()
         available_repos = list(factory.get_all_repositories().keys())
-        logger.info(f"Repositorios disponibles: {available_repos}")
+        logger.info(
+            "Repositorios disponibles",
+            extra={
+                "available_repos": available_repos,
+                "correlation_id": correlation_id,
+            },
+        )
         
         if not available_repos:
-            logger.error("No hay repositorios disponibles. Verificar API keys en variables de entorno.")
+            logger.error(
+                "No hay repositorios disponibles",
+                extra={
+                    "correlation_id": correlation_id,
+                },
+            )
             raise HTTPException(
                 status_code=503,
                 detail="No hay fuentes de datos configuradas. Verificar API keys.",
@@ -77,7 +99,13 @@ async def get_current_weather(
         )
 
         if not forecasts:
-            logger.warning(f"No se obtuvieron pronósticos. Repositorios disponibles: {available_repos}")
+            logger.warning(
+                "No se obtuvieron pronósticos",
+                extra={
+                    "available_repos": available_repos,
+                    "correlation_id": correlation_id,
+                },
+            )
             raise HTTPException(
                 status_code=503,
                 detail=f"No se pudieron obtener datos meteorológicos. Repositorios disponibles: {', '.join(available_repos)}",
@@ -115,12 +143,27 @@ async def get_current_weather(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error obteniendo datos actuales: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        # Obtener correlation ID del request state
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.error(
+            "Error obteniendo datos actuales",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "latitude": lat,
+                "longitude": lon,
+                "correlation_id": correlation_id,
+            },
+            exc_info=True,
+        )
+        # No exponer detalles internos - el exception handler global se encargará
+        raise
 
 
 @router.get("/forecast", response_model=ForecastResponse)
 async def get_forecast(
+    request: Request,
     lat: float = Query(..., description="Latitud", ge=-90, le=90),
     lon: float = Query(..., description="Longitud", ge=-180, le=180),
     hours: int = Query(24, description="Horas de pronóstico", ge=1, le=168),
@@ -134,7 +177,17 @@ async def get_forecast(
     Retorna pronóstico horario para las próximas N horas.
     """
     try:
-        logger.info(f"Obteniendo pronóstico de {hours}h para ({lat}, {lon})")
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.info(
+            "Obteniendo pronóstico",
+            extra={
+                "latitude": lat,
+                "longitude": lon,
+                "hours": hours,
+                "correlation_id": correlation_id,
+            },
+        )
 
         engine = UnifiedWeatherEngine()
         forecasts = engine.get_unified_forecast(
@@ -189,5 +242,20 @@ async def get_forecast(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error obteniendo pronóstico: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        # Obtener correlation ID del request state
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.error(
+            "Error obteniendo pronóstico",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "latitude": lat,
+                "longitude": lon,
+                "hours": hours,
+                "correlation_id": correlation_id,
+            },
+            exc_info=True,
+        )
+        # No exponer detalles internos - el exception handler global se encargará
+        raise

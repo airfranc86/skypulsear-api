@@ -6,9 +6,20 @@ Desplegado en Render.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import weather, risk, alerts, patterns, health
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app.api import exception_handlers
+from app.api.routers import weather, risk, alerts, patterns, health, metrics
+from app.api.middleware.correlation_id import CorrelationIDMiddleware
+from app.api.middleware.metrics_middleware import MetricsMiddleware
 from app.api.middleware.rate_limit import RateLimitMiddleware
 from app.api.middleware.security_headers import SecurityHeadersMiddleware
+from app.utils.exceptions import SkyPulseError
+from app.utils.logging_config import setup_logging
+
+# Configurar logging estructurado JSON al inicio
+setup_logging()
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -20,6 +31,9 @@ app = FastAPI(
 )
 
 # Middleware de seguridad (orden importante: primero los más generales)
+# CorrelationID debe ir primero para que todos los logs lo incluyan
+app.add_middleware(CorrelationIDMiddleware)
+app.add_middleware(MetricsMiddleware)  # Métricas después de correlation ID
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware)
 
@@ -34,14 +48,26 @@ app.add_middleware(
         "http://127.0.0.1:8080",
         "https://*.vercel.app",
         "https://skypulse.vercel.app",
+        "https://skypulse-ar.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
+# Registrar exception handlers globales (orden importante: más específicos primero)
+app.add_exception_handler(SkyPulseError, exception_handlers.skypulse_error_handler)
+app.add_exception_handler(
+    StarletteHTTPException, exception_handlers.http_exception_handler
+)
+app.add_exception_handler(
+    RequestValidationError, exception_handlers.validation_exception_handler
+)
+app.add_exception_handler(Exception, exception_handlers.generic_exception_handler)
+
 # Registrar routers
 app.include_router(health.router, tags=["Health"])
+app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(weather.router, prefix="/api/v1/weather", tags=["Weather"])
 app.include_router(risk.router, prefix="/api/v1", tags=["Risk"])
 app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])

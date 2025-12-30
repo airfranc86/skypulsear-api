@@ -2,14 +2,20 @@
 Router de alertas meteorológicas.
 """
 
-import logging
 from typing import Optional
-from fastapi import APIRouter, Query, HTTPException
+
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from app.services import AlertService, AlertLevel, UnifiedWeatherEngine, PatternDetector
+from app.services import (
+    AlertLevel,
+    AlertService,
+    PatternDetector,
+    UnifiedWeatherEngine,
+)
+from app.utils.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -39,6 +45,7 @@ class AlertsResponse(BaseModel):
 
 @router.get("/", response_model=AlertsResponse)
 async def get_alerts(
+    request: Request,
     lat: float = Query(..., description="Latitud", ge=-90, le=90),
     lon: float = Query(..., description="Longitud", ge=-180, le=180),
     hours: int = Query(24, description="Horas a evaluar", ge=1, le=72),
@@ -54,7 +61,17 @@ async def get_alerts(
     - 4: CRÍTICA - Emergencia
     """
     try:
-        logger.info(f"Obteniendo alertas para ({lat}, {lon}), próximas {hours}h")
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.info(
+            "Obteniendo alertas",
+            extra={
+                "latitude": lat,
+                "longitude": lon,
+                "hours": hours,
+                "correlation_id": correlation_id,
+            },
+        )
 
         # 1. Obtener pronóstico fusionado
         engine = UnifiedWeatherEngine()
@@ -112,5 +129,19 @@ async def get_alerts(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error obteniendo alertas: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        correlation_id = getattr(request.state, "correlation_id", None)
+        
+        logger.error(
+            "Error obteniendo alertas",
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "latitude": lat,
+                "longitude": lon,
+                "hours": hours,
+                "correlation_id": correlation_id,
+            },
+            exc_info=True,
+        )
+        # No exponer detalles internos - el exception handler global se encargará
+        raise

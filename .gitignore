@@ -27,10 +27,7 @@ Thumbs.db
 *.log
 logs/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
+# Testing (ya movido abajo)
 
 # Build
 dist/
@@ -41,7 +38,8 @@ build/
 _legacy_streamlit/
 public/
 Instagram/
-scripts/
+# Scripts de utilidad SÍ se suben (prepare_deploy, pre_deploy_check)
+# scripts/
 
 # Archivos locales
 StationCba.csv
@@ -59,4 +57,12 @@ StationCba.csv
 .env.*.local
 
 .vercel
-tests/
+# Tests SÍ se suben (test_circuit_breaker, test_retry, test_metrics, etc.)
+# tests/
+.env*.local
+
+# Coverage reports (no subir)
+coverage.xml
+htmlcov/
+.pytest_cache/
+.coverage

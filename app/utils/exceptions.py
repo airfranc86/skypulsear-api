@@ -53,3 +53,9 @@ class VerificationError(SkyPulseError):
     """Error en procesos de verificación."""
 
     pass
+
+
+class CircuitBreakerOpenError(APIError):
+    """Excepción lanzada cuando el circuit breaker está abierto."""
+
+    pass

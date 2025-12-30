@@ -26,17 +26,11 @@ seaborn>=0.13.0
 requests>=2.31.0
 httpx>=0.25.0
 
-# AWS (para WRF-SMN dataset)
-boto3>=1.29.0
-
-# NetCDF (para WRF-SMN - lectura de archivos NetCDF)
-# IMPORTANTE: netCDF4 requiere numpy instalado primero (ver arriba)
-# Requisitos del sistema (instalar antes de pip install):
-# - Linux: sudo apt-get install libhdf5-dev libnetcdf-dev (Render lo hace automáticamente)
-# - Windows: usar conda o instalar desde wheels precompilados
-netCDF4>=1.6.0  # Lectura de archivos NetCDF (requiere numpy)
-xarray>=2023.1.0  # Manipulación de datasets NetCDF
-s3fs>=2023.1.0  # Acceso directo a S3 sin descargar archivos completos (streaming)
+# AWS y NetCDF comentados - no se usan actualmente (AWS requiere pago)
+# boto3>=1.29.0
+# netCDF4>=1.6.0
+# xarray>=2023.1.0
+# s3fs>=2023.1.0
 
 # Utilidades
 python-dotenv>=1.0.0

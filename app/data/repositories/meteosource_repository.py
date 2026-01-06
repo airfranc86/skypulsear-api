@@ -61,10 +61,11 @@ class MeteosourceRepository(IWeatherRepository):
             expected_exception=(ConnectionError, Timeout, RequestException),
             name="meteosource_api",
         )
-        
+
         # Registrar estado inicial del circuit breaker en métricas
         try:
             from app.utils.metrics import record_circuit_breaker_state
+
             record_circuit_breaker_state("meteosource_api", "closed")
         except ImportError:
             pass
@@ -82,6 +83,7 @@ class MeteosourceRepository(IWeatherRepository):
         Returns:
             WeatherData con condiciones actuales o None si hay error
         """
+
         # Función interna con retry que será protegida por circuit breaker
         def _fetch_with_retry() -> Optional[WeatherData]:
             """Función interna con retry que será protegida por circuit breaker."""
@@ -145,7 +147,10 @@ class MeteosourceRepository(IWeatherRepository):
                 except ConnectionError as e:
                     # Error DNS o conexión - retry con backoff
                     error_msg = str(e)
-                    if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    if (
+                        "Failed to resolve" in error_msg
+                        or "Name or service not known" in error_msg
+                    ):
                         logger.warning(
                             "Error DNS al conectar con Meteosource",
                             extra={
@@ -156,7 +161,9 @@ class MeteosourceRepository(IWeatherRepository):
                             },
                         )
                         if attempt < max_retries - 1:
-                            time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                            time.sleep(
+                                retry_delay * (2**attempt)
+                            )  # Backoff exponencial
                             continue
                         else:
                             logger.error(
@@ -188,7 +195,9 @@ class MeteosourceRepository(IWeatherRepository):
                     response_text = None
                     if hasattr(e, "response") and e.response is not None:
                         status_code = e.response.status_code
-                        response_text = e.response.text[:200] if e.response.text else None
+                        response_text = (
+                            e.response.text[:200] if e.response.text else None
+                        )
 
                     logger.error(
                         "Error HTTP obteniendo datos actuales de Meteosource",
@@ -246,6 +255,7 @@ class MeteosourceRepository(IWeatherRepository):
         Returns:
             Lista de WeatherData con pronóstico
         """
+
         # Función interna con retry que será protegida por circuit breaker
         def _fetch_forecast_with_retry() -> List[WeatherData]:
             """Función interna con retry que será protegida por circuit breaker."""
@@ -324,7 +334,10 @@ class MeteosourceRepository(IWeatherRepository):
                 except ConnectionError as e:
                     # Error DNS o conexión - retry con backoff
                     error_msg = str(e)
-                    if "Failed to resolve" in error_msg or "Name or service not known" in error_msg:
+                    if (
+                        "Failed to resolve" in error_msg
+                        or "Name or service not known" in error_msg
+                    ):
                         logger.warning(
                             "Error DNS al conectar con Meteosource",
                             extra={
@@ -335,7 +348,9 @@ class MeteosourceRepository(IWeatherRepository):
                             },
                         )
                         if attempt < max_retries - 1:
-                            time.sleep(retry_delay * (2 ** attempt))  # Backoff exponencial
+                            time.sleep(
+                                retry_delay * (2**attempt)
+                            )  # Backoff exponencial
                             continue
                         else:
                             logger.error(
@@ -367,7 +382,9 @@ class MeteosourceRepository(IWeatherRepository):
                     response_text = None
                     if hasattr(e, "response") and e.response is not None:
                         status_code = e.response.status_code
-                        response_text = e.response.text[:200] if e.response.text else None
+                        response_text = (
+                            e.response.text[:200] if e.response.text else None
+                        )
 
                     logger.error(
                         "Error HTTP obteniendo pronóstico de Meteosource",

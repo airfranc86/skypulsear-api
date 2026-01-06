@@ -13,6 +13,7 @@ from app.utils.logging_config import get_logger
 # Importación condicional de WRFSMNRepository (requiere boto3, s3fs, xarray)
 try:
     from app.data.repositories.wrfsmn_repository import WRFSMNRepository
+
     WRFSMN_AVAILABLE = True
 except ImportError:
     # boto3, s3fs o xarray no están instalados

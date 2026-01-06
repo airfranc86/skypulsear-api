@@ -1,2 +1,1 @@
 """Utilidades del sistema SkyPulse."""
-

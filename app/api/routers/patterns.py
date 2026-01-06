@@ -58,7 +58,7 @@ async def get_detected_patterns(
     """
     try:
         correlation_id = getattr(request.state, "correlation_id", None)
-        
+
         logger.info(
             "Detectando patrones",
             extra={
@@ -126,7 +126,7 @@ async def get_detected_patterns(
         raise
     except Exception as e:
         correlation_id = getattr(request.state, "correlation_id", None)
-        
+
         logger.error(
             "Error detectando patrones",
             extra={

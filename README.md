@@ -3,7 +3,8 @@
 API de decisiones meteorológicas para Argentina. Backend FastAPI desplegado en Render, Frontend desplegado en Vercel.
 
 > 📍 **Lanzamiento inicial:** Datos para Córdoba, Argentina  
-> 🗓️ **Última actualización:** 2024
+> 🗓️ **Última actualización:** 2026-01-04  
+> 🌐 **URL Producción:** https://skypulse-ar.vercel.app/dashboard
 
 ---
 
@@ -39,21 +40,26 @@ API de decisiones meteorológicas para Argentina. Backend FastAPI desplegado en 
 - **Animaciones:** anime.js (timeline para secuencias complejas)
 
 ### Fuentes de Datos Meteorológicos
-- **Meteosource:** API principal (plan gratuito)
-- **Windy-GFS:** Modelo global (funcionando)
-- **Open-Meteo:** Fallback gratuito
+- **Open-Meteo:** Fuente principal (gratuito, sin API key)
+  - Modelos: ECMWF (europeo) y GFS (global)
+  - **NOTA:** No es ideal para Córdoba, Argentina, pero es la solución temporal hasta configurar NetCDF para WRF-SMN
+- **Windy-GFS:** Fallback automático (requiere API key opcional)
+- **Meteosource:** Opcional para alertas (si está configurado)
+- **WRF-SMN:** Pendiente integración desde AWS S3 (Open Data, gratuito, 4km resolución)
 - **Estaciones Locales:** CSV (solo local)
 
 ---
 
 ## 🏗️ Arquitectura
 
-### Estado Actual
+### Estado Actual (2026-01-04)
 
-- ✅ **Frontend activo:** https://skypulse-ar.vercel.app/dashboard.html
+- ✅ **Frontend activo:** https://skypulse-ar.vercel.app/dashboard
 - ⏸️ **Backend pausado:** Temporalmente por fallas con Render y Meteosource
 - ✅ **Lógica de alertas:** Operativa (scoring 0-5, niveles 0-4)
-- ✅ **Arquitectura:** Frontend-only con Meteosource + AlertEngine
+- ✅ **Arquitectura:** Frontend-only con Open-Meteo (principal) + Windy (fallback) + AlertEngine
+- ✅ **Open-Meteo implementado:** Cliente con fallback automático a Windy
+- ⏳ **WRF-SMN:** Pendiente configuración NetCDF para integración desde AWS S3
 
 ### Estructura del Proyecto
 
@@ -74,7 +80,8 @@ SkyPulse/
 │   │   └── anime-utils.js # Utilidades de animación con anime.js timeline
 │   ├── alert-engine.js    # Motor de alertas frontend
 │   ├── alert-rules.json   # Reglas de alertas
-│   └── meteosource-client.js # Cliente Meteosource
+│   ├── open-meteo-client.js # Cliente Open-Meteo (principal) con fallback Windy
+│   └── meteosource-client.js # Cliente Meteosource (opcional, para alertas)
 ├── tests/                 # Tests del backend
 └── requirements.txt       # Dependencias Python
 ```
@@ -165,15 +172,18 @@ class AlertLevel(IntEnum):
 
 El sistema puede operar **completamente sin backend** usando:
 
-1. **Meteosource API** (directo desde frontend)
-2. **AlertEngine** (evaluación de reglas en JavaScript)
-3. **alert-rules.json** (reglas declarativas)
+1. **Open-Meteo API** (principal, gratuito, sin API key)
+2. **Windy API** (fallback automático si Open-Meteo falla, requiere API key opcional)
+3. **Meteosource API** (opcional, para alertas si está configurado)
+4. **AlertEngine** (evaluación de reglas en JavaScript)
+5. **alert-rules.json** (reglas declarativas)
 
 ### Archivos Clave
 
+- **`public/open-meteo-client.js`:** Cliente Open-Meteo con fallback automático a Windy
 - **`public/alert-rules.json`:** Reglas declarativas de alertas
 - **`public/alert-engine.js`:** Motor de evaluación de alertas
-- **`public/meteosource-client.js`:** Cliente JavaScript para Meteosource API
+- **`public/meteosource-client.js`:** Cliente Meteosource (opcional, para alertas)
 
 ### Configuración de API Key
 
@@ -198,14 +208,22 @@ const CONFIG = {
    ↓
 2. Carga alert-rules.json y inicializa AlertEngine
    ↓
-3. Inicializa MeteosourceClient con API key
+3. Inicializa OpenMeteoClient (principal) con fallback Windy opcional
    ↓
-4. fetchAlerts() es llamado:
-   a. Obtiene pronóstico horario de Meteosource
-   b. AlertEngine evalúa reglas contra pronóstico
-   c. Genera alertas con niveles, fenómenos, recomendaciones
+4. Inicializa MeteosourceClient (opcional, para alertas)
    ↓
-5. Alertas se muestran en UI (alert-banner, alert-stack)
+5. fetchWeatherData() es llamado:
+   a. Intenta obtener datos de Open-Meteo (ECMWF o GFS)
+   b. Si falla, usa Windy como fallback (si está configurado)
+   c. Si ambos fallan, usa cache o datos de ejemplo
+   ↓
+6. fetchAlerts() es llamado:
+   a. Prioridad: Meteosource > Open-Meteo
+   b. Obtiene pronóstico horario de la fuente disponible
+   c. AlertEngine evalúa reglas contra pronóstico
+   d. Genera alertas con niveles, fenómenos, recomendaciones
+   ↓
+7. Datos y alertas se muestran en UI (dashboard, alert-banner, alert-stack)
 ```
 
 ---
@@ -283,10 +301,29 @@ python -m http.server 8080
 ### Frontend (Vercel)
 
 ```bash
-vercel --prod
+# Instalar Vercel CLI (si no está instalado)
+npm i -g vercel
+
+# Login en Vercel
+vercel login
+
+# ⚠️ IMPORTANTE: Desplegar desde la carpeta public/
+cd public
+
+# Desplegar a producción
+vercel --prod --yes
 ```
 
-**URL Frontend:** https://skypulse-ar.vercel.app/dashboard.html
+**⚠️ NOTA CRÍTICA:** El despliegue DEBE hacerse desde `public/`, no desde la raíz. Si se despliega desde la raíz, Vercel detectará FastAPI y fallará.
+
+**Estado del Despliegue (2026-01-04):**
+- ✅ Configuración correcta: `vercel.json` en raíz con `outputDirectory: "public"`
+- ✅ Despliegue exitoso desde `public/`
+- ✅ URL funcionando: https://skypulse-ar.vercel.app/dashboard
+
+**URL Frontend:** https://skypulse-ar.vercel.app/dashboard  
+**Proyecto Vercel:** `skypulse-ar`  
+**Dashboard Vercel:** https://vercel.com/franc-projects/skypulse-ar
 
 ---
 
@@ -333,13 +370,22 @@ Value: [Tu anon/public key de Supabase]
 
 ### Configuración Frontend (Vercel)
 
+**Proyecto:** `skypulse-ar`  
+**URL Producción:** https://skypulse-ar.vercel.app/dashboard  
+**Dashboard Vercel:** https://vercel.com/franc-projects/skypulse-ar
+
+**Variables de Entorno Opcionales en Vercel:**
+- `WINDY_API_KEY` - Para fallback automático si Open-Meteo falla
+- `METEOSOURCE_API_KEY` - Para alertas (si no está configurado, usa Open-Meteo)
+
 En `dashboard.html`, la configuración está en:
 
 ```javascript
 const CONFIG = {
-    backendUrl: 'https://skypulsear-api.onrender.com',
+    backendUrl: 'https://skypulsear-api.onrender.com', // Backend pausado
     apiKey: null,  // Opcional, para features premium
-    meteosourceApiKey: null  // Se obtiene de window.METEOSOURCE_API_KEY
+    windyApiKey: null,  // Opcional: Para fallback si Open-Meteo falla
+    meteosourceApiKey: null  // Opcional: Para alertas (se obtiene de window.METEOSOURCE_API_KEY)
 };
 ```
 
@@ -375,21 +421,22 @@ const CONFIG = {
 Failed to resolve 'api.meteosource.com' ([Errno -2] Name or service not known)
 ```
 
-**Estado Actual:**
+**Estado Actual (2026-01-04):**
 - ⏸️ **Backend pausado** temporalmente por este problema
-- ✅ **Frontend funciona** con Meteosource directo (no afectado)
-- ✅ **Workaround:** Windy-GFS funciona correctamente y se usa como fuente principal
+- ✅ **Frontend funciona** con Open-Meteo como fuente principal (gratuito, sin API key)
+- ✅ **Fallback implementado:** Windy-GFS como fallback automático si Open-Meteo falla
+- ✅ **Meteosource:** Opcional para alertas, si no está disponible usa Open-Meteo
 
 **Hipótesis:**
 1. Restricciones de red en Render Free Tier
 2. Problema temporal de DNS
 3. Configuración de red faltante
 
-**Acciones Requeridas:**
-- [ ] Verificar restricciones de red en Render Free Tier
-- [ ] Probar desde otro servicio de hosting
-- [ ] Contactar soporte de Meteosource
-- [ ] Considerar alternativas (Windy-GFS como fuente principal)
+**Acciones Realizadas (2026-01-04):**
+- [x] Implementado Open-Meteo como fuente principal (gratuito, sin API key)
+- [x] Implementado fallback automático a Windy si Open-Meteo falla
+- [x] Alertas funcionan con Open-Meteo si Meteosource no está disponible
+- [ ] Pendiente: Configurar NetCDF para WRF-SMN (solución ideal para Córdoba)
 
 ### ⚠️ Windy-CAMS Removido
 
@@ -529,6 +576,30 @@ Propietario - Francisco A.
 
 ---
 
-**Última actualización:** 2024  
+**Última actualización:** 2026-01-04  
 **Versión Backend:** Pausado temporalmente  
-**Versión Frontend:** Activa (Frontend-Only Mode)
+**Versión Frontend:** v2.2 - Activa (Frontend-Only Mode con Open-Meteo + Windy fallback)
+
+## 📋 Estado del Proyecto (2026-01-04)
+
+### ✅ Completado Recientemente
+
+- [x] **Open-Meteo implementado** como fuente principal de datos meteorológicos
+- [x] **Fallback automático a Windy** si Open-Meteo falla
+- [x] **Cliente Open-Meteo** con soporte para modelos ECMWF y GFS
+- [x] **Alertas funcionan con Open-Meteo** si Meteosource no está disponible
+- [x] **Despliegue desde `public/`** configurado y funcionando
+- [x] **Documentación actualizada** con estado actual del proyecto
+
+### ⏳ Pendiente
+
+- [ ] **Configurar NetCDF** para procesar WRF-SMN desde AWS S3
+- [ ] **Integrar WRF-SMN** como fuente principal (reemplazar Open-Meteo)
+- [ ] **Resolver problema Meteosource** en Render (backend)
+- [ ] **Reactivar backend** cuando WRF-SMN esté integrado
+
+### 📝 Notas Importantes
+
+- **Open-Meteo no es ideal para Córdoba, Argentina**, pero es la solución temporal hasta configurar NetCDF para WRF-SMN
+- **WRF-SMN** (4km resolución) es la solución ideal, pero requiere procesamiento de NetCDF
+- **Backend pausado** temporalmente, todo funciona en frontend-only mode

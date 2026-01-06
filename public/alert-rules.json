@@ -1,0 +1,174 @@
+{
+    "version": "1.0",
+    "description": "Reglas declarativas de alertas meteorológicas - SkyPulse Frontend",
+    "source": "Basado en lógica de AlertService y PatternDetector del backend",
+    "alert_levels": {
+        "0": {
+            "name": "Normal",
+            "color": "#10B981"
+        },
+        "1": {
+            "name": "Atención",
+            "color": "#3B82F6"
+        },
+        "2": {
+            "name": "Precaución",
+            "color": "#F59E0B"
+        },
+        "3": {
+            "name": "Alerta",
+            "color": "#F97316"
+        },
+        "4": {
+            "name": "Crítico",
+            "color": "#DC2626"
+        }
+    },
+    "time_windows": {
+        "0-3h": {
+            "min": 0,
+            "max": 3,
+            "label": "Próximas 0-3 horas"
+        },
+        "3-12h": {
+            "min": 3,
+            "max": 12,
+            "label": "Próximas 3-12 horas"
+        },
+        "12-24h": {
+            "min": 12,
+            "max": 24,
+            "label": "Próximas 12-24 horas"
+        },
+        "24-48h": {
+            "min": 24,
+            "max": 48,
+            "label": "Próximas 24-48 horas"
+        }
+    },
+    "rules": [
+        {
+            "id": "heavy_precipitation",
+            "name": "Precipitación Intensa",
+            "description": "Detección de lluvia intensa",
+            "conditions": {
+                "precipitation_mm": {
+                    "min": 30,
+                    "operator": ">="
+                }
+            },
+            "level_by_window": {
+                "0-3h": 4,
+                "3-12h": 3,
+                "12-24h": 2,
+                "24-48h": 1
+            },
+            "phenomenon": "lluvia intensa",
+            "recommendations": {
+                "3": "Modificar o postergar actividades sensibles al clima.",
+                "4": "Evitar actividades al aire libre. Buscar refugio seguro."
+            }
+        },
+        {
+            "id": "strong_wind",
+            "name": "Vientos Fuertes",
+            "description": "Detección de vientos fuertes",
+            "conditions": {
+                "wind_speed_ms": {
+                    "min": 20,
+                    "operator": ">="
+                }
+            },
+            "level_by_window": {
+                "0-3h": 3,
+                "3-12h": 2,
+                "12-24h": 1,
+                "24-48h": 1
+            },
+            "phenomenon": "vientos fuertes",
+            "recommendations": {
+                "2": "Evaluar planes y monitorear actualizaciones.",
+                "3": "Modificar o postergar actividades sensibles al clima."
+            }
+        },
+        {
+            "id": "extreme_heat",
+            "name": "Calor Extremo",
+            "description": "Detección de calor extremo",
+            "conditions": {
+                "temperature_celsius": {
+                    "min": 40,
+                    "operator": ">="
+                }
+            },
+            "level_by_window": {
+                "0-3h": 3,
+                "3-12h": 3,
+                "12-24h": 2,
+                "24-48h": 1
+            },
+            "phenomenon": "calor extremo",
+            "recommendations": {
+                "3": "Permanecer en lugares frescos. Hidratarse frecuentemente. Evitar exposición solar."
+            }
+        },
+        {
+            "id": "frost",
+            "name": "Heladas",
+            "description": "Detección de heladas",
+            "conditions": {
+                "temperature_celsius": {
+                    "max": 0,
+                    "operator": "<="
+                }
+            },
+            "level_by_window": {
+                "0-3h": 3,
+                "3-12h": 3,
+                "12-24h": 2,
+                "24-48h": 1
+            },
+            "phenomenon": "heladas",
+            "recommendations": {
+                "2": "Proteger cultivos sensibles. Precaución al conducir.",
+                "3": "Riesgo de hielo en rutas. Proteger cañerías exteriores."
+            }
+        },
+        {
+            "id": "convective_storm",
+            "name": "Tormenta Convectiva",
+            "description": "Detección de tormentas convectivas (proxy: precipitación + viento)",
+            "conditions": {
+                "precipitation_mm": {
+                    "min": 15,
+                    "operator": ">="
+                },
+                "wind_speed_ms": {
+                    "min": 15,
+                    "operator": ">="
+                }
+            },
+            "requires_all": true,
+            "level_by_window": {
+                "0-3h": 4,
+                "3-12h": 3,
+                "12-24h": 2,
+                "24-48h": 1
+            },
+            "phenomenon": "tormentas severas",
+            "recommendations": {
+                "3": "Monitorear radar meteorológico. Evitar actividades al aire libre.",
+                "4": "Buscar refugio en estructura sólida. Alejarse de árboles y postes. No cruzar zonas inundadas."
+            }
+        }
+    ],
+    "thresholds": {
+        "precipitation_intense": 30,
+        "precipitation_storm_proxy": 15,
+        "wind_strong": 20,
+        "wind_storm_proxy": 15,
+        "temperature_extreme_heat": 40,
+        "temperature_frost": 0,
+        "temperature_severe_frost": -5
+    }
+}

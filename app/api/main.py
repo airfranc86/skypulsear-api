@@ -10,7 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import exception_handlers
-from app.api.routers import weather, risk, alerts, patterns, health, metrics
+from app.api.routers import weather, risk, alerts, patterns, health, metrics, auth, auth
 from app.api.middleware.correlation_id import CorrelationIDMiddleware
 from app.api.middleware.metrics_middleware import MetricsMiddleware
 from app.api.middleware.rate_limit import RateLimitMiddleware
@@ -68,6 +68,8 @@ app.add_exception_handler(Exception, exception_handlers.generic_exception_handle
 # Registrar routers
 app.include_router(health.router, prefix="/api/v1/health", tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(weather.router, prefix="/api/v1/weather", tags=["Weather"])
 app.include_router(risk.router, prefix="/api/v1", tags=["Risk"])
 app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])

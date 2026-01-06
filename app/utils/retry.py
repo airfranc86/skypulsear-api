@@ -20,7 +20,7 @@ def retry_with_backoff(
 ) -> Callable:
     """
     Decorador para retry logic con exponential backoff y jitter.
-    
+
     Args:
         max_attempts: Número máximo de intentos (incluyendo el primero)
         initial_delay: Delay inicial en segundos
@@ -28,10 +28,10 @@ def retry_with_backoff(
         max_delay: Delay máximo en segundos
         jitter: Si True, agrega jitter aleatorio para evitar thundering herd
         retry_on: Tupla de excepciones que deben trigger retry (None = todas)
-        
+
     Returns:
         Decorador que envuelve la función con retry logic
-        
+
     Ejemplo:
         @retry_with_backoff(max_attempts=3, initial_delay=1.0, multiplier=2.0)
         def fetch_data():
@@ -53,9 +53,7 @@ def retry_with_backoff(
 
                     if attempt < max_attempts - 1:
                         # Calcular delay con exponential backoff
-                        delay = min(
-                            initial_delay * (multiplier ** attempt), max_delay
-                        )
+                        delay = min(initial_delay * (multiplier**attempt), max_delay)
 
                         # Agregar jitter si está habilitado
                         if jitter:
@@ -110,7 +108,7 @@ def retry_async_with_backoff(
 ) -> Callable:
     """
     Decorador para retry logic asíncrono con exponential backoff y jitter.
-    
+
     Args:
         max_attempts: Número máximo de intentos (incluyendo el primero)
         initial_delay: Delay inicial en segundos
@@ -118,10 +116,10 @@ def retry_async_with_backoff(
         max_delay: Delay máximo en segundos
         jitter: Si True, agrega jitter aleatorio para evitar thundering herd
         retry_on: Tupla de excepciones que deben trigger retry (None = todas)
-        
+
     Returns:
         Decorador que envuelve la función async con retry logic
-        
+
     Ejemplo:
         @retry_async_with_backoff(max_attempts=3, initial_delay=1.0)
         async def fetch_data_async():
@@ -145,9 +143,7 @@ def retry_async_with_backoff(
 
                     if attempt < max_attempts - 1:
                         # Calcular delay con exponential backoff
-                        delay = min(
-                            initial_delay * (multiplier ** attempt), max_delay
-                        )
+                        delay = min(initial_delay * (multiplier**attempt), max_delay)
 
                         # Agregar jitter si está habilitado
                         if jitter:
@@ -190,5 +186,3 @@ def retry_async_with_backoff(
         return wrapper
 
     return decorator
-
-

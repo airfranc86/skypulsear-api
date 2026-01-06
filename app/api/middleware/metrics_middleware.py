@@ -16,11 +16,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Registrar métricas del request.
-        
+
         Args:
             request: Request HTTP
             call_next: Función para continuar con el siguiente middleware
-            
+
         Returns:
             Response HTTP
         """
@@ -42,5 +42,3 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         )
 
         return response
-
-

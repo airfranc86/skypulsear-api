@@ -36,7 +36,7 @@ build/
 
 # Legacy (no subir)
 _legacy_streamlit/
-public/
+# public/ - NO ignorar, se necesita para deploy en Vercel
 Instagram/
 # Scripts de utilidad SÍ se suben (prepare_deploy, pre_deploy_check)
 # scripts/

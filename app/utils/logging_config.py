@@ -21,10 +21,10 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """
         Formatear log record como JSON estructurado.
-        
+
         Args:
             record: LogRecord a formatear
-            
+
         Returns:
             String JSON con el log estructurado
         """
@@ -86,11 +86,11 @@ class JSONFormatter(logging.Formatter):
 def setup_logging(level: Optional[str] = None) -> logging.Logger:
     """
     Configurar sistema de logging estructurado JSON.
-    
+
     Args:
         level: Nivel de logging (DEBUG, INFO, WARNING, ERROR, CRITICAL).
                Si es None, usa LOG_LEVEL de variables de entorno o INFO por defecto.
-    
+
     Returns:
         Logger configurado
     """
@@ -120,12 +120,11 @@ def setup_logging(level: Optional[str] = None) -> logging.Logger:
 def get_logger(name: str) -> logging.Logger:
     """
     Obtener logger para un módulo específico.
-    
+
     Args:
         name: Nombre del módulo (típicamente __name__)
-    
+
     Returns:
         Logger configurado para el módulo
     """
     return logging.getLogger(name)
-

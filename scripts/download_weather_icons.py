@@ -24,7 +24,6 @@ WEATHER_ICONS: List[Tuple[str, str]] = [
     ("day-cloudy", "Día nublado"),
     ("day-sunny", "Día soleado"),
     ("day-sunny-overcast", "Día soleado con nubes"),
-    
     # Precipitación
     ("rain", "Lluvia"),
     ("day-rain", "Día lluvioso"),
@@ -32,39 +31,33 @@ WEATHER_ICONS: List[Tuple[str, str]] = [
     ("day-rain-wind", "Día lluvia con viento"),
     ("day-showers", "Día chubascos"),
     ("day-sprinkle", "Día llovizna"),
-    
     # Nieve
     ("snow", "Nieve"),
     ("day-snow", "Día nevado"),
     ("day-snow-wind", "Día nieve con viento"),
     ("day-sleet", "Día aguanieve"),
     ("day-sleet-storm", "Día tormenta de aguanieve"),
-    
     # Tormentas
     ("thunderstorm", "Tormenta"),
     ("day-thunderstorm", "Día tormenta"),
     ("day-storm-showers", "Día chubascos tormentosos"),
     ("day-snow-thunderstorm", "Día tormenta de nieve"),
     ("lightning", "Rayo"),
-    
     # Viento
     ("windy", "Ventoso"),
     ("day-windy", "Día ventoso"),
     ("day-light-wind", "Día viento ligero"),
     ("strong-wind", "Viento fuerte"),
-    
     # Niebla y visibilidad
     ("fog", "Niebla"),
     ("day-fog", "Día con niebla"),
     ("day-haze", "Día con bruma"),
-    
     # Temperatura
     ("thermometer", "Termómetro"),
     ("thermometer-exterior", "Termómetro exterior"),
     ("thermometer-internal", "Termómetro interno"),
     ("hot", "Calor"),
     ("cold", "Frío"),
-    
     # Direcciones
     ("direction-up", "Norte"),
     ("direction-down", "Sur"),
@@ -74,7 +67,6 @@ WEATHER_ICONS: List[Tuple[str, str]] = [
     ("direction-up-left", "Noroeste"),
     ("direction-down-right", "Sureste"),
     ("direction-down-left", "Suroeste"),
-    
     # Otros
     ("barometer", "Barómetro"),
     ("humidity", "Humedad"),
@@ -94,39 +86,38 @@ ICONIFY_API_BASE = "https://api.iconify.design/wi"
 def download_icon(icon_name: str) -> bool:
     """
     Descargar un icono desde iconify API.
-    
+
     Args:
         icon_name: Nombre del icono
-        
+
     Returns:
         True si se descargó correctamente, False en caso contrario
     """
     try:
         url = f"{ICONIFY_API_BASE}/{icon_name}.svg"
         response = requests.get(url, timeout=10)
-        
+
         if response.status_code == 200:
             svg_content = response.text
-            
+
             # Asegurar que tenga los atributos necesarios
-            if 'width="22"' not in svg_content and 'width=' not in svg_content:
+            if 'width="22"' not in svg_content and "width=" not in svg_content:
                 # Agregar atributos si no los tiene
                 svg_content = svg_content.replace(
-                    '<svg',
-                    '<svg width="22" height="22" fill="currentColor"'
+                    "<svg", '<svg width="22" height="22" fill="currentColor"'
                 )
-            
+
             # Guardar archivo
             icon_path = ICONS_DIR / f"{icon_name}.svg"
             with open(icon_path, "w", encoding="utf-8") as f:
                 f.write(svg_content)
-            
+
             print(f"[OK] Descargado: {icon_name}.svg")
             return True
         else:
             print(f"[ERROR] Error {response.status_code}: {icon_name}")
             return False
-            
+
     except Exception as e:
         print(f"[ERROR] Error descargando {icon_name}: {e}")
         return False
@@ -136,19 +127,19 @@ def main():
     """Descargar todos los iconos de Weather Icons."""
     print(f"Descargando iconos de Weather Icons a: {ICONS_DIR}")
     print(f"Total de iconos a descargar: {len(WEATHER_ICONS)}\n")
-    
+
     downloaded = 0
     failed = 0
-    
+
     for icon_name, description in WEATHER_ICONS:
         if download_icon(icon_name):
             downloaded += 1
         else:
             failed += 1
-        
+
         # Pequeña pausa para no sobrecargar la API
         time.sleep(0.2)
-    
+
     print(f"\n{'='*50}")
     print(f"[OK] Descargados: {downloaded}")
     print(f"[ERROR] Fallidos: {failed}")
@@ -158,4 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

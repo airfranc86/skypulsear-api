@@ -70,7 +70,7 @@ cache_misses = Counter(
 def get_metrics() -> bytes:
     """
     Obtener métricas en formato Prometheus.
-    
+
     Returns:
         Bytes con métricas en formato Prometheus
     """
@@ -85,7 +85,7 @@ def record_request_metrics(
 ) -> None:
     """
     Registrar métricas de un request HTTP.
-    
+
     Args:
         method: Método HTTP (GET, POST, etc.)
         endpoint: Endpoint (ej: /api/v1/weather/current)
@@ -107,9 +107,7 @@ def record_request_metrics(
 
     # Registrar errores si aplica
     if status_code >= 400:
-        error_type = (
-            "client_error" if 400 <= status_code < 500 else "server_error"
-        )
+        error_type = "client_error" if 400 <= status_code < 500 else "server_error"
         request_errors.labels(
             method=method,
             endpoint=normalized_endpoint,
@@ -121,7 +119,7 @@ def record_request_metrics(
 def record_source_availability(source: str, available: bool) -> None:
     """
     Registrar disponibilidad de una fuente meteorológica.
-    
+
     Args:
         source: Nombre de la fuente (ej: "meteosource", "windy")
         available: True si está disponible, False si no
@@ -132,7 +130,7 @@ def record_source_availability(source: str, available: bool) -> None:
 def record_circuit_breaker_state(circuit_name: str, state: str) -> None:
     """
     Registrar estado de un circuit breaker.
-    
+
     Args:
         circuit_name: Nombre del circuit breaker
         state: Estado ("closed", "open", "half_open")
@@ -144,7 +142,7 @@ def record_circuit_breaker_state(circuit_name: str, state: str) -> None:
 def record_circuit_breaker_failure(circuit_name: str) -> None:
     """
     Registrar un fallo en un circuit breaker.
-    
+
     Args:
         circuit_name: Nombre del circuit breaker
     """
@@ -156,21 +154,19 @@ def record_source_request_duration(
 ) -> None:
     """
     Registrar duración de un request a una fuente meteorológica.
-    
+
     Args:
         source: Nombre de la fuente
         operation: Operación (ej: "get_current", "get_forecast")
         duration: Duración en segundos
     """
-    source_request_duration.labels(source=source, operation=operation).observe(
-        duration
-    )
+    source_request_duration.labels(source=source, operation=operation).observe(duration)
 
 
 def record_cache_hit(cache_type: str) -> None:
     """
     Registrar un cache hit.
-    
+
     Args:
         cache_type: Tipo de cache (ej: "weather_current", "weather_forecast")
     """
@@ -180,10 +176,8 @@ def record_cache_hit(cache_type: str) -> None:
 def record_cache_miss(cache_type: str) -> None:
     """
     Registrar un cache miss.
-    
+
     Args:
         cache_type: Tipo de cache (ej: "weather_current", "weather_forecast")
     """
     cache_misses.labels(cache_type=cache_type).inc()
-
-

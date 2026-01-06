@@ -90,10 +90,11 @@ class WindyRepository(IWeatherRepository):
             expected_exception=(ConnectionError, Timeout, RequestException),
             name="windy_api",
         )
-        
+
         # Registrar estado inicial del circuit breaker en métricas
         try:
             from app.utils.metrics import record_circuit_breaker_state
+
             record_circuit_breaker_state("windy_api", "closed")
         except ImportError:
             pass

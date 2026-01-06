@@ -23,16 +23,14 @@ from app.utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-async def skypulse_error_handler(
-    request: Request, exc: SkyPulseError
-) -> JSONResponse:
+async def skypulse_error_handler(request: Request, exc: SkyPulseError) -> JSONResponse:
     """
     Handler para excepciones personalizadas de SkyPulse.
-    
+
     Args:
         request: Request HTTP
         exc: Excepción de SkyPulse
-        
+
     Returns:
         JSONResponse con formato de error consistente
     """
@@ -80,11 +78,11 @@ async def http_exception_handler(
 ) -> JSONResponse:
     """
     Handler para HTTPException de Starlette/FastAPI.
-    
+
     Args:
         request: Request HTTP
         exc: HTTPException
-        
+
     Returns:
         JSONResponse con formato de error consistente
     """
@@ -118,11 +116,11 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     """
     Handler para errores de validación de Pydantic.
-    
+
     Args:
         request: Request HTTP
         exc: RequestValidationError de Pydantic
-        
+
     Returns:
         JSONResponse con formato de error consistente
     """
@@ -161,16 +159,14 @@ async def validation_exception_handler(
     )
 
 
-async def generic_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Handler genérico para excepciones no manejadas.
-    
+
     Args:
         request: Request HTTP
         exc: Excepción no manejada
-        
+
     Returns:
         JSONResponse con formato de error consistente
     """
@@ -198,5 +194,3 @@ async def generic_exception_handler(
             }
         },
     )
-
-

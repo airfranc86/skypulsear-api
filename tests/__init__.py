@@ -1,1 +1,0 @@
-"""Tests para SkyPulse API."""

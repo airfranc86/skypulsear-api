@@ -20,45 +20,34 @@ PREDEFINED_LOCATIONS = {
 }
 
 # Variables meteorológicas
-WEATHER_VARIABLES = [
-    "temp",
-    "viento_vel",
-    "viento_dir",
-    "precip",
-    "nubosidad"
-]
+WEATHER_VARIABLES = ["temp", "viento_vel", "viento_dir", "precip", "nubosidad"]
 
 # Modelos meteorológicos soportados
-SUPPORTED_MODELS = [
-    "WRF-SMN",
-    "ECMWF",
-    "GFS",
-    "Meteosource"
-]
+SUPPORTED_MODELS = ["WRF-SMN", "ECMWF", "GFS", "Meteosource"]
 
 # Métricas de verificación
 VERIFICATION_METRICS = [
-    "MAE",      # Mean Absolute Error
-    "Bias",     # Bias (sesgo)
-    "RMSE",     # Root Mean Square Error
-    "ETS",      # Equitable Threat Score
-    "POD",      # Probability of Detection
-    "FAR"       # False Alarm Rate
+    "MAE",  # Mean Absolute Error
+    "Bias",  # Bias (sesgo)
+    "RMSE",  # Root Mean Square Error
+    "ETS",  # Equitable Threat Score
+    "POD",  # Probability of Detection
+    "FAR",  # False Alarm Rate
 ]
 
 # Lead times para análisis
 LEAD_TIMES = {
-    "short": (0, 24),      # 0-24 horas
-    "medium": (24, 72),    # 24-72 horas
-    "long": (72, 168)      # 72-168 horas (3-7 días)
+    "short": (0, 24),  # 0-24 horas
+    "medium": (24, 72),  # 24-72 horas
+    "long": (72, 168),  # 72-168 horas (3-7 días)
 }
 
 # Umbrales de alerta por defecto
 DEFAULT_ALERT_THRESHOLDS = {
-    "precip": 50.0,        # mm
-    "viento_vel": 15.0,    # m/s
-    "temp_max": 35.0,      # °C
-    "temp_min": 0.0        # °C
+    "precip": 50.0,  # mm
+    "viento_vel": 15.0,  # m/s
+    "temp_max": 35.0,  # °C
+    "temp_min": 0.0,  # °C
 }
 
 # Timeout para requests HTTP (segundos)
@@ -66,4 +55,3 @@ HTTP_TIMEOUT = 30  # Aumentado para APIs externas que pueden ser lentas
 
 # Ventana de tiempo para comparación (minutos)
 COMPARISON_TIME_WINDOW = 15
-

@@ -62,7 +62,7 @@ async def get_alerts(
     """
     try:
         correlation_id = getattr(request.state, "correlation_id", None)
-        
+
         logger.info(
             "Obteniendo alertas",
             extra={
@@ -130,7 +130,7 @@ async def get_alerts(
         raise
     except Exception as e:
         correlation_id = getattr(request.state, "correlation_id", None)
-        
+
         logger.error(
             "Error obteniendo alertas",
             extra={

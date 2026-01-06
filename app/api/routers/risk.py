@@ -23,6 +23,7 @@ router = APIRouter()
 
 class RiskScoreRequest(BaseModel):
     """Request para cálculo de risk score."""
+
     lat: float = Field(..., ge=-90, le=90, description="Latitud")
     lon: float = Field(..., ge=-180, le=180, description="Longitud")
     profile: str = Field(..., description="Tipo de perfil (piloto, agricultor, etc.)")
@@ -31,9 +32,12 @@ class RiskScoreRequest(BaseModel):
 
 class RiskScoreResponse(BaseModel):
     """Response del cálculo de risk score."""
+
     score: float = Field(..., ge=0, le=5, description="Score de riesgo (0-5)")
     category: str = Field(..., description="Categoría de riesgo")
-    risk_score_100: float = Field(..., ge=0, le=100, description="Score convertido a 0-100")
+    risk_score_100: float = Field(
+        ..., ge=0, le=100, description="Score convertido a 0-100"
+    )
     temperature_risk: float = Field(..., ge=0, le=5)
     wind_risk: float = Field(..., ge=0, le=5)
     precipitation_risk: float = Field(..., ge=0, le=5)
@@ -53,13 +57,13 @@ async def calculate_risk_score(
 ) -> RiskScoreResponse:
     """
     Calcula el risk score para un perfil específico.
-    
+
     Integra:
     - UnifiedWeatherEngine: Obtiene pronóstico fusionado
     - PatternDetector: Detecta patrones meteorológicos
     - AlertService: Genera alertas operativas
     - RiskScoringService: Calcula score personalizado por perfil
-    
+
     Perfiles disponibles:
     - piloto: Aviación general
     - agricultor: Agricultura y ganadería
@@ -82,16 +86,16 @@ async def calculate_risk_score(
             "turismo": UserProfile.TOURISM,
             "general": UserProfile.GENERAL,
         }
-        
+
         profile = profile_map.get(request.profile.lower())
         if not profile:
             raise HTTPException(
                 status_code=400,
                 detail=f"Perfil no válido. Opciones: {list(profile_map.keys())}",
             )
-        
+
         correlation_id = getattr(http_request.state, "correlation_id", None)
-        
+
         logger.info(
             "Calculando risk score",
             extra={
@@ -102,7 +106,7 @@ async def calculate_risk_score(
                 "correlation_id": correlation_id,
             },
         )
-        
+
         # 1. Obtener pronóstico fusionado
         engine = UnifiedWeatherEngine()
         forecasts = engine.get_unified_forecast(
@@ -110,21 +114,21 @@ async def calculate_risk_score(
             longitude=request.lon,
             hours=request.hours_ahead + 6,  # Obtener más horas para análisis
         )
-        
+
         if not forecasts:
             raise HTTPException(
                 status_code=503,
                 detail="No se pudieron obtener datos meteorológicos. Intente más tarde.",
             )
-        
+
         # 2. Detectar patrones
         pattern_detector = PatternDetector()
         patterns = pattern_detector.detect_patterns(forecasts)
-        
+
         # 3. Generar alertas
         alert_service = AlertService()
         alerts = alert_service.generate_alerts(patterns, forecasts)
-        
+
         # 4. Calcular risk score
         risk_service = RiskScoringService()
         risk_score = risk_service.calculate_risk(
@@ -134,10 +138,10 @@ async def calculate_risk_score(
             alerts=alerts,
             hours_ahead=request.hours_ahead,
         )
-        
+
         # Convertir score 0-5 a 0-100 para frontend
         risk_score_100 = (risk_score.score / 5.0) * 100
-        
+
         # Extraer recomendaciones de patrones y alertas
         recommendations = []
         if patterns:
@@ -147,20 +151,26 @@ async def calculate_risk_score(
             for alert in alerts:
                 if alert.recommendations:
                     recommendations.extend(alert.recommendations)
-        
+
         # Generar key factors
         key_factors = []
         if risk_score.temperature_risk >= 3:
-            key_factors.append(f"Riesgo térmico alto: {risk_score.temperature_risk:.1f}/5")
+            key_factors.append(
+                f"Riesgo térmico alto: {risk_score.temperature_risk:.1f}/5"
+            )
         if risk_score.wind_risk >= 3:
             key_factors.append(f"Riesgo de viento: {risk_score.wind_risk:.1f}/5")
         if risk_score.precipitation_risk >= 3:
-            key_factors.append(f"Riesgo de precipitación: {risk_score.precipitation_risk:.1f}/5")
+            key_factors.append(
+                f"Riesgo de precipitación: {risk_score.precipitation_risk:.1f}/5"
+            )
         if risk_score.storm_risk >= 3:
             key_factors.append(f"Riesgo de tormentas: {risk_score.storm_risk:.1f}/5")
         if patterns:
-            key_factors.append(f"{len(patterns)} patrón(es) meteorológico(s) detectado(s)")
-        
+            key_factors.append(
+                f"{len(patterns)} patrón(es) meteorológico(s) detectado(s)"
+            )
+
         return RiskScoreResponse(
             score=risk_score.score,
             category=risk_score.category.value,
@@ -181,7 +191,7 @@ async def calculate_risk_score(
         raise
     except Exception as e:
         correlation_id = getattr(http_request.state, "correlation_id", None)
-        
+
         logger.error(
             "Error calculando risk score",
             extra={
@@ -196,4 +206,3 @@ async def calculate_risk_score(
         )
         # No exponer detalles internos - el exception handler global se encargará
         raise
-

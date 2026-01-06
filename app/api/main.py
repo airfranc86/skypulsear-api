@@ -66,7 +66,7 @@ app.add_exception_handler(
 app.add_exception_handler(Exception, exception_handlers.generic_exception_handler)
 
 # Registrar routers
-app.include_router(health.router, tags=["Health"])
+app.include_router(health.router, prefix="/api/v1/health", tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(weather.router, prefix="/api/v1/weather", tags=["Weather"])
 app.include_router(risk.router, prefix="/api/v1", tags=["Risk"])

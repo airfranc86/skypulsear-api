@@ -8,8 +8,16 @@ from app.data.repositories.base_repository import IWeatherRepository
 from app.data.repositories.meteosource_repository import MeteosourceRepository
 from app.data.repositories.local_stations_repository import LocalStationsRepository
 from app.data.repositories.windy_repository import WindyRepository
-from app.data.repositories.wrfsmn_repository import WRFSMNRepository
 from app.utils.logging_config import get_logger
+
+# Importación condicional de WRFSMNRepository (requiere boto3, s3fs, xarray)
+try:
+    from app.data.repositories.wrfsmn_repository import WRFSMNRepository
+    WRFSMN_AVAILABLE = True
+except ImportError:
+    # boto3, s3fs o xarray no están instalados
+    WRFSMN_AVAILABLE = False
+    WRFSMNRepository = None  # type: ignore
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -95,6 +103,15 @@ def create_repository(repository_type: str, **kwargs) -> Optional[IWeatherReposi
         return WindyRepository(api_key=api_key, default_model=default_model)
 
     elif repository_type == "aws_smn" or repository_type == "wrfsmn":
+        if not WRFSMN_AVAILABLE:
+            logger.warning(
+                "WRFSMNRepository no disponible: boto3, s3fs o xarray no están instalados. "
+                "Instala con: pip install boto3 s3fs xarray netCDF4"
+            )
+            raise ValueError(
+                "WRFSMNRepository requiere boto3, s3fs y xarray. "
+                "Instala con: pip install boto3 s3fs xarray netCDF4"
+            )
         use_meteosource_fallback = kwargs.get("use_meteosource_fallback", True)
         cache_ttl_hours = kwargs.get("cache_ttl_hours", 6)
         return WRFSMNRepository(
@@ -145,15 +162,21 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
         logger.warning(f"No se pudo crear repositorio Windy: {e}")
 
     # WRF-SMN (AWS S3 o Meteosource fallback)
-    try:
-        # Intentar crear repositorio WRF-SMN
-        # No requiere credenciales AWS (Open Data)
-        repositories["WRF-SMN"] = create_repository(
-            "wrfsmn", use_meteosource_fallback=True
+    if WRFSMN_AVAILABLE:
+        try:
+            # Intentar crear repositorio WRF-SMN
+            # No requiere credenciales AWS (Open Data)
+            repositories["WRF-SMN"] = create_repository(
+                "wrfsmn", use_meteosource_fallback=True
+            )
+            logger.info("Repositorio WRF-SMN creado")
+        except Exception as e:
+            logger.warning(f"No se pudo crear repositorio WRF-SMN: {e}")
+    else:
+        logger.info(
+            "WRFSMNRepository no disponible: boto3, s3fs o xarray no están instalados. "
+            "Omitiendo repositorio WRF-SMN."
         )
-        logger.info("Repositorio WRF-SMN creado")
-    except Exception as e:
-        logger.warning(f"No se pudo crear repositorio WRF-SMN: {e}")
 
     logger.info(f"Repositorios creados: {list(repositories.keys())}")
     return repositories

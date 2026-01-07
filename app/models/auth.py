@@ -5,6 +5,7 @@ Pydantic models for user authentication, profiles, and API key management.
 """
 
 from pydantic import BaseModel, Field, EmailStr
+from pydantic.v1 import EmailStr as EmailStrV1
 from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum

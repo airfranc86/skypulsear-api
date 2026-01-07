@@ -5,10 +5,12 @@ Pydantic models for user authentication, profiles, and API key management.
 """
 
 from pydantic import BaseModel, Field
-from pydantic.types import EmailStr
 from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+
+# Use string type for maximum compatibility across all pydantic versions
+EmailStr = str
 
 
 class UserType(str, Enum):

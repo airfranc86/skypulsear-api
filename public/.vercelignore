@@ -1,34 +1,3 @@
-# .vercelignore - Archivos a excluir del deploy de Vercel
-
-# Directorios y archivos de desarrollo/backend
-app/
-tests/
-scripts/
-.venv/
-.pytest_cache/
-.coverage/
-.mypy_cache/
-.ruff_cache/
-htmlcov/
-
-# Archivos de configuración de backend
-requirements.txt
-render.yaml
-docker-compose.monitoring.yml
-prometheus.yml
-docker-compose.yml
-
-# Directorios de trabajo legacy
-.legacy_streamlit/
-Instagram/
-
-# Archivos de documentación y desarrollo
-README.md
-PHASE*.md
-AWS_S3_PHASE3_CONFIG.env
-AGENTS.md
-.DS_Store
-*.log
-
-# Solo incluir el directorio public/
-public/
+*
+!index.html
+!vercel.json

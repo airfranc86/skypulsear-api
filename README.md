@@ -40,12 +40,21 @@ API de decisiones meteorológicas para Argentina. Backend FastAPI desplegado en 
 - **Animaciones:** anime.js (timeline para secuencias complejas)
 
 ### Fuentes de Datos Meteorológicos
-- **Open-Meteo:** Fuente principal (gratuito, sin API key)
+
+- **WRF-SMN:** Fuente principal implementada (4km resolución)
+  - Acceso AWS S3 Bucket Keys configurado
+  - **Modelo:** WRF-DET optimizado para Argentina y Sierras de Córdoba
+  - **Resolución:** 4km (3.5x superior a ECMWF ~14km)
+  - **Actualización:** Cada 6 horas (00, 06, 12, 18 UTC)
+  - **Horizonte:** 72 horas pronóstico
+  - **Acceso:** AWS Open Data (gratuito, sin credenciales)
+
+- **Open-Meteo:** Fallback secundario (gratuito, sin API key)
   - Modelos: ECMWF (europeo) y GFS (global)
-  - **NOTA:** No es ideal para Córdoba, Argentina, pero es la solución temporal hasta configurar NetCDF para WRF-SMN
-- **Windy-GFS:** Fallback automático (requiere API key opcional)
+  - **NOTA:** Backup automático si WRF-SMN falla
+
+- **Windy-GFS:** Fallback terciario (requiere API key opcional)
 - **Meteosource:** Opcional para alertas (si está configurado)
-- **WRF-SMN:** Pendiente integración desde AWS S3 (Open Data, gratuito, 4km resolución)
 - **Estaciones Locales:** CSV (solo local)
 
 ---
@@ -589,17 +598,25 @@ Propietario - Francisco A.
 - [x] **Cliente Open-Meteo** con soporte para modelos ECMWF y GFS
 - [x] **Alertas funcionan con Open-Meteo** si Meteosource no está disponible
 - [x] **Despliegue desde `public/`** configurado y funcionando
-- [x] **Documentación actualizada** con estado actual del proyecto
+- [x] **AWS S3 Bucket Keys configurados** según documentación AWS
+- [x] **WRF-SMN implementado** con acceso anónimo a AWS Open Data (4km resolución)
+- [x] **Backend con `/api/v1` prefix** deployado y corregido
+- [x] **Phase 1-3 completadas** (Security, Code Quality, AWS Integration)
+- [x] **Documentación Phase 3** creada con guía completa
+- [x] **Deploy automatizado** GitHub → Render → Vercel
 
 ### ⏳ Pendiente
 
-- [ ] **Configurar NetCDF** para procesar WRF-SMN desde AWS S3
-- [ ] **Integrar WRF-SMN** como fuente principal (reemplazar Open-Meteo)
 - [ ] **Resolver problema Meteosource** en Render (backend)
-- [ ] **Reactivar backend** cuando WRF-SMN esté integrado
+- [ ] **Configurar NetCDF** para procesar WRF-SMN desde AWS S3 (Phase 4.1)
+- [ ] **Optimizar Performance WRF-SMN** con caching y streaming (Phase 4.2)
+- [ ] **Integrar WRF-SMN** como fuente principal (Phase 4.3)
+- [ ] **Reactivar backend** cuando WRF-SMN esté integrado (Phase 4.4)
 
-### 📝 Notas Importantes
+### 🎖️ **Notas Importantes**
 
-- **Open-Meteo no es ideal para Córdoba, Argentina**, pero es la solución temporal hasta configurar NetCDF para WRF-SMN
-- **WRF-SMN** (4km resolución) es la solución ideal, pero requiere procesamiento de NetCDF
-- **Backend pausado** temporalmente, todo funciona en frontend-only mode
+- **WRF-SMN ya está implementado** con acceso AWS S3 Bucket Keys (Phase 3)
+- **Resolución mejorada:** 4km (WRF-SMN) vs 14km (ECMWF) - 3.5x más densa
+- **Backend disponible:** Con endpoints `/api/v1/*` corregidos
+- **Despliegue automatizado:** GitHub → Render (backend) + Vercel (frontend)
+- **Performance lista:** Phase 4 roadmap disponible para optimización

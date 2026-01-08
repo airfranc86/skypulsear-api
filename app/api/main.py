@@ -65,14 +65,14 @@ app.add_exception_handler(
 )
 app.add_exception_handler(Exception, exception_handlers.generic_exception_handler)
 
-# Registrar routers
-app.include_router(health.router, tags=["Health"])
-app.include_router(metrics.router, tags=["Metrics"])
-app.include_router(auth.router, tags=["Authentication"])
-app.include_router(weather.router, tags=["Weather"])
-app.include_router(risk.router, tags=["Risk"])
-app.include_router(alerts.router, tags=["Alerts"])
-app.include_router(patterns.router, tags=["Patterns"])
+# Registrar routers con prefix /api/v1
+app.include_router(health.router, prefix="/api/v1", tags=["Health"])
+app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
+app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
+app.include_router(weather.router, prefix="/api/v1", tags=["Weather"])
+app.include_router(risk.router, prefix="/api/v1", tags=["Risk"])
+app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
+app.include_router(patterns.router, prefix="/api/v1", tags=["Patterns"])
 
 
 @app.get("/")

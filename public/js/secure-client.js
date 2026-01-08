@@ -5,7 +5,7 @@
 
 class SecureWeatherClient {
     constructor() {
-        this.baseURL = this.getEnvVar('API_BASE_URL', 'http://localhost:8000/api/v1');
+        this.baseURL = this.getEnvVar('API_BASE_URL', 'https://skypulsear-api.onrender.com/api/v1');
         this.token = localStorage.getItem('skypulse_token');
         this.currentUser = null;
     }

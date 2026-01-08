@@ -1,6 +1,5 @@
 """
 Unit tests for SkyPulse authentication system.
-Tests authentication, JWT tokens, and password validation.
 """
 
 import pytest
@@ -73,6 +72,11 @@ class TestAPIKeyManagement:
         # Test second key (should also be cached)
         key2 = api_key_manager.get_key("meteosource")
         assert isinstance(key2, (str, type(None)))
+
+        # Clear cache and get fresh keys
+        api_key_manager.clear_cache()
+        key1_fresh = api_key_manager.get_key("windy")
+        assert key1_fresh == key1 or key1_fresh is not None
 
         # Test clearing specific key
         api_key_manager.clear_cache("windy")

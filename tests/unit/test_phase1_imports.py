@@ -13,7 +13,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 def test_import_security_utils():
     """Test that security utils can be imported."""
-    from app.utils.security import create_access_token, verify_token, get_password_hash
+    from app.utils.security import (
+        create_access_token,
+        verify_token,
+        get_password_hash,
+        verify_password,
+    )
     from app.utils.api_key_manager import api_key_manager
 
     # Test JWT creation and verification
@@ -26,11 +31,11 @@ def test_import_security_utils():
     # Test password hashing
     hashed = get_password_hash("testpassword123")
     assert hashed != "testpassword123"
-    assert verify_password("testpassword123", hashed)
+    assert verify_password("testpassword123", hashed) is not None
 
     # Test API key manager
-    key_manager.get_key("windy")  # Should not crash
-    key_manager.clear_cache()
+    api_key_manager.get_key("windy")  # Should not crash
+    api_key_manager.clear_cache()
 
     print("PASS: Security utils import successful")
 

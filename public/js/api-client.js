@@ -72,14 +72,14 @@ class SkyPulseAPI {
      * Obtiene datos meteorológicos actuales
      */
     async getCurrentWeather(lat, lon) {
-        return this.request(`/api/v1/weather/current?lat=${lat}&lon=${lon}`);
+        return this.request(`/api/v1/weather/current?lat=${lat}&lon=${lon}&api_key=${this.apiKey || 'demo-key'}`);
     }
 
     /**
      * Obtiene pronóstico meteorológico
      */
     async getForecast(lat, lon, hours = 24) {
-        return this.request(`/api/v1/weather/forecast?lat=${lat}&lon=${lon}&hours=${hours}`);
+        return this.request(`/api/v1/weather/forecast?lat=${lat}&lon=${lon}&hours=${hours}&api_key=${this.apiKey || 'demo-key'}`);
     }
 
     /**
@@ -102,6 +102,13 @@ class SkyPulseAPI {
      */
     async getAlerts(lat, lon, hours = 24) {
         return this.request(`/api/v1/alerts?lat=${lat}&lon=${lon}&hours=${hours}`);
+    }
+
+    /**
+     * Obtiene alertas meteorológicas (weather endpoint)
+     */
+    async getWeatherAlerts(lat, lon, hours = 24) {
+        return this.request(`/api/v1/weather/alerts?lat=${lat}&lon=${lon}&hours=${hours}&api_key=${this.apiKey || 'demo-key'}`);
     }
 
     /**

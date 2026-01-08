@@ -5,18 +5,11 @@ Weather endpoints with basic protection for Phase 1 security implementation.
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/weather", tags=["weather"])
-
-
-class WeatherRequest(BaseModel):
-    lat: float = Query(..., ge=-90, le=90, description="Latitude")
-    lon: float = Query(..., ge=-180, le=180, description="Longitude")
-    user_preferences: Dict[str, Any] = None
 
 
 @router.get("/public/health")
@@ -30,7 +23,12 @@ async def weather_service_health():
 
 
 @router.get("/current")
-async def get_current_weather(request: WeatherRequest, api_key: str = None):
+async def get_current_weather(
+    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+    user_preferences: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
+):
     """Get current weather - requires API key header."""
 
     # Simple API key validation for Phase 1
@@ -40,13 +38,11 @@ async def get_current_weather(request: WeatherRequest, api_key: str = None):
         )
 
     try:
-        logger.info(
-            f"Weather requested for coordinates: lat={request.lat}, lon={request.lon}"
-        )
+        logger.info(f"Weather requested for coordinates: lat={lat}, lon={lon}")
 
         # Mock weather data (Phase 1 demo)
         weather_data = {
-            "location": {"lat": request.lat, "lon": request.lon},
+            "location": {"lat": lat, "lon": lon},
             "current": {
                 "temperature": 22.5,
                 "humidity": 65,
@@ -69,7 +65,11 @@ async def get_current_weather(request: WeatherRequest, api_key: str = None):
 
 @router.get("/forecast")
 async def get_weather_forecast(
-    request: WeatherRequest, days: int = 7, api_key: str = None
+    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+    days: int = Query(7, ge=1, le=14, description="Forecast days"),
+    user_preferences: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
 ):
     """Get weather forecast - requires API key."""
 
@@ -81,12 +81,12 @@ async def get_weather_forecast(
 
     try:
         logger.info(
-            f"Forecast requested for coordinates: lat={request.lat}, lon={request.lon}, days={days}"
+            f"Forecast requested for coordinates: lat={lat}, lon={lon}, days={days}"
         )
 
         # Mock forecast data (Phase 1 demo)
         forecast_data = {
-            "location": {"lat": request.lat, "lon": request.lon},
+            "location": {"lat": lat, "lon": lon},
             "forecast_days": days,
             "authentication": "protected",
             "api_key_valid": True,
@@ -110,7 +110,11 @@ async def get_weather_forecast(
 
 @router.get("/alerts")
 async def get_weather_alerts(
-    request: WeatherRequest, hours: int = 24, api_key: str = None
+    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+    hours: int = Query(24, ge=1, le=168, description="Time window in hours"),
+    user_preferences: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None,
 ):
     """Get weather alerts - requires API key."""
 
@@ -121,13 +125,11 @@ async def get_weather_alerts(
         )
 
     try:
-        logger.info(
-            f"Alerts requested for coordinates: lat={request.lat}, lon={request.lon}"
-        )
+        logger.info(f"Alerts requested for coordinates: lat={lat}, lon={lon}")
 
         # Mock alerts data (Phase 1 demo)
         alerts_data = {
-            "location": {"lat": request.lat, "lon": request.lon},
+            "location": {"lat": lat, "lon": lon},
             "time_window_hours": hours,
             "authentication": "protected",
             "api_key_valid": True,

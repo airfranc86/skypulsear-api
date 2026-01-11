@@ -16,6 +16,8 @@ from app.models.auth import (
     Token,
     UserProfileCreate,
     UserProfileResponse,
+    APIKeyRequest,
+    APIKeyResponse,
 )
 from app.services.auth_service import AuthService
 from app.utils.security import verify_token
@@ -79,9 +81,11 @@ async def register(request: RegisterRequest):
             password=request.password
         )
         # Crear perfil por defecto
+        from app.models.auth import UserType
         profile_data = UserProfileCreate(
-            user_id=0,  # Se asignará después de crear el usuario
-            profile_type="general"
+            user_type=UserType.GENERAL,
+            location=None,
+            preferences=None
         )
         auth_service = AuthService()
         result = await auth_service.create_user(user_data, profile_data)
@@ -135,4 +139,43 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
+        )
+
+
+@router.post("/api-key", response_model=APIKeyResponse)
+async def generate_api_key(
+    request: APIKeyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Genera una API key para un servicio externo (ej: windy).
+    
+    Requiere autenticación Bearer token.
+    """
+    try:
+        from app.utils.security import get_api_key as get_service_api_key
+        
+        # Obtener API key del servicio solicitado desde variables de entorno
+        service_key = get_service_api_key(request.service)
+        
+        if not service_key:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"API key no configurada para el servicio: {request.service}",
+            )
+        
+        # Retornar la API key (en producción, esto podría ser una key generada específica para el usuario)
+        return APIKeyResponse(
+            api_key=service_key,
+            service=request.service,
+            expires_at=None,  # Las keys del sistema no expiran
+            rate_limit=1000,  # Límite por defecto
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando API key: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error generando API key",
         )

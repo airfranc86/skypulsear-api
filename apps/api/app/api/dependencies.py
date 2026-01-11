@@ -38,8 +38,14 @@ def get_api_key_from_request(request: Request) -> Optional[str]:
     Lee API key del header de manera case-insensitive.
     Starlette/FastAPI normaliza headers, pero intentamos múltiples variantes por seguridad.
     """
-    # Starlette normaliza headers a lowercase, pero intentamos ambas formas
-    api_key = request.headers.get("X-API-Key") or request.headers.get("x-api-key")
+    # CRÍTICO: Leer de todas las formas posibles (case-insensitive)
+    # Starlette normaliza a lowercase, pero algunos proxies pueden cambiar esto
+    api_key = (
+        request.headers.get("X-API-Key") 
+        or request.headers.get("x-api-key")
+        or request.headers.get("X-Api-Key")
+        or request.headers.get("X-API-KEY")
+    )
     if api_key:
         return api_key.strip()
     return None

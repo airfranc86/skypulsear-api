@@ -45,30 +45,26 @@ class WeatherNormalizerService:
         source_name = source_override or data.source or "unknown"
         source = self._map_source(source_name)
 
-        # Convertir temperatura de Kelvin a Celsius si es necesario
-        # Windy devuelve temperatura en Kelvin (típicamente 200-350K)
-        # CRÍTICO: Convertir ANTES de crear NormalizedWeatherData
+        # CRÍTICO: Convertir temperatura de Kelvin a Celsius ANTES de validar
+        # Windy devuelve temperatura en Kelvin (200-350K), debe convertirse a Celsius
         temperature_celsius = None
         if data.temperature is not None:
-            temp_value = float(data.temperature)
-            original_temp = temp_value
+            temp_raw = float(data.temperature)
             
-            # Si temperatura > 100, está en Kelvin - convertir a Celsius
-            if temp_value > 100:
-                temp_value = temp_value - 273.15
-                logger.info(
-                    f"🌡️ Temperatura convertida: {original_temp:.2f}K -> {temp_value:.2f}°C (fuente: {source_name})"
-                )
+            # SIEMPRE convertir si > 100 (definitivamente Kelvin)
+            if temp_raw > 100:
+                temp_celsius = temp_raw - 273.15
+                logger.info(f"🌡️ K->°C: {temp_raw:.1f}K = {temp_celsius:.1f}°C")
+            else:
+                temp_celsius = temp_raw
             
-            # Asegurar que esté en rango válido para Pydantic (-100°C a 60°C)
-            if temp_value < -100:
-                logger.warning(f"⚠️ Temp muy baja: {temp_value:.2f}°C, ajustando a -100°C")
+            # Ajustar a límites de Pydantic (-100°C a 60°C)
+            if temp_celsius < -100:
                 temperature_celsius = -100.0
-            elif temp_value > 60:
-                logger.warning(f"⚠️ Temp muy alta: {temp_value:.2f}°C, ajustando a 60°C")
+            elif temp_celsius > 60:
                 temperature_celsius = 60.0
             else:
-                temperature_celsius = round(temp_value, 2)
+                temperature_celsius = round(temp_celsius, 2)
 
         return NormalizedWeatherData(
             source=source,

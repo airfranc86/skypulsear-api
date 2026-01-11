@@ -1,0 +1,703 @@
+{
+    "tech_stack": [
+        "Python",
+        "FastAPI",
+        "Pydantic",
+        "PostgreSQL",
+        "AWS S3",
+        "JWT",
+        "bcrypt"
+    ],
+    "features": [
+        {
+            "name": "Health Check",
+            "description": "Health check endpoint para verificar el estado del servicio",
+            "files": [
+                "apps/api/app/api/routers/health.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/health": {
+                        "get": {
+                            "summary": "Health check endpoint",
+                            "description": "Retorna el estado del servicio",
+                            "responses": {
+                                "200": {
+                                    "description": "Servicio saludable",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "healthy"
+                                                    },
+                                                    "service": {
+                                                        "type": "string",
+                                                        "example": "skypulse-api"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Metrics",
+            "description": "Endpoint de métricas en formato Prometheus",
+            "files": [
+                "apps/api/app/api/routers/metrics.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/metrics": {
+                        "get": {
+                            "summary": "Métricas Prometheus",
+                            "description": "Retorna métricas del servicio en formato Prometheus",
+                            "responses": {
+                                "200": {
+                                    "description": "Métricas en formato Prometheus",
+                                    "content": {
+                                        "text/plain": {
+                                            "schema": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Current Weather",
+            "description": "Obtiene condiciones meteorológicas actuales para una ubicación",
+            "files": [
+                "apps/api/app/api/routers/weather.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/weather/current": {
+                        "get": {
+                            "summary": "Obtener clima actual",
+                            "description": "Retorna condiciones meteorológicas actuales",
+                            "security": [
+                                {
+                                    "ApiKeyAuth": []
+                                }
+                            ],
+                            "parameters": [
+                                {
+                                    "name": "lat",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number",
+                                        "minimum": -90,
+                                        "maximum": 90
+                                    },
+                                    "description": "Latitud"
+                                },
+                                {
+                                    "name": "lon",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number",
+                                        "minimum": -180,
+                                        "maximum": 180
+                                    },
+                                    "description": "Longitud"
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "Datos meteorológicos actuales",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "location": {
+                                                        "type": "object"
+                                                    },
+                                                    "current": {
+                                                        "type": "object"
+                                                    },
+                                                    "source": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado - API key inválida"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Weather Forecast",
+            "description": "Obtiene pronóstico meteorológico para una ubicación",
+            "files": [
+                "apps/api/app/api/routers/weather.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/weather/forecast": {
+                        "get": {
+                            "summary": "Obtener pronóstico",
+                            "description": "Retorna pronóstico meteorológico",
+                            "security": [
+                                {
+                                    "ApiKeyAuth": []
+                                }
+                            ],
+                            "parameters": [
+                                {
+                                    "name": "lat",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Latitud"
+                                },
+                                {
+                                    "name": "lon",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Longitud"
+                                },
+                                {
+                                    "name": "hours",
+                                    "in": "query",
+                                    "required": false,
+                                    "schema": {
+                                        "type": "integer",
+                                        "default": 48
+                                    },
+                                    "description": "Horas de pronóstico"
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "Pronóstico meteorológico",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Weather Alerts",
+            "description": "Obtiene alertas meteorológicas para una ubicación",
+            "files": [
+                "apps/api/app/api/routers/alerts.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/alerts": {
+                        "get": {
+                            "summary": "Obtener alertas meteorológicas",
+                            "description": "Retorna alertas operativas basadas en patrones y pronósticos",
+                            "security": [
+                                {
+                                    "ApiKeyAuth": []
+                                }
+                            ],
+                            "parameters": [
+                                {
+                                    "name": "lat",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Latitud"
+                                },
+                                {
+                                    "name": "lon",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Longitud"
+                                },
+                                {
+                                    "name": "hours",
+                                    "in": "query",
+                                    "required": false,
+                                    "schema": {
+                                        "type": "integer",
+                                        "default": 24
+                                    },
+                                    "description": "Horas a evaluar"
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "Lista de alertas",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "location": {
+                                                        "type": "object"
+                                                    },
+                                                    "alerts": {
+                                                        "type": "array"
+                                                    },
+                                                    "alert_count": {
+                                                        "type": "integer"
+                                                    },
+                                                    "max_level": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado"
+                                },
+                                "503": {
+                                    "description": "Servicio temporalmente no disponible"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Risk Score",
+            "description": "Calcula score de riesgo personalizado para un perfil de usuario",
+            "files": [
+                "apps/api/app/api/routers/risk.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/risk-score": {
+                        "post": {
+                            "summary": "Calcular risk score",
+                            "description": "Calcula score de riesgo basado en perfil de usuario y condiciones meteorológicas",
+                            "security": [
+                                {
+                                    "ApiKeyAuth": []
+                                }
+                            ],
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "profile": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "piloto",
+                                                        "agricultor",
+                                                        "camionero",
+                                                        "deportes_exteriores",
+                                                        "evento_exterior",
+                                                        "construccion",
+                                                        "turismo",
+                                                        "general"
+                                                    ]
+                                                },
+                                                "latitude": {
+                                                    "type": "number"
+                                                },
+                                                "longitude": {
+                                                    "type": "number"
+                                                },
+                                                "hours_ahead": {
+                                                    "type": "integer",
+                                                    "default": 6
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Risk score calculado",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "score": {
+                                                        "type": "number"
+                                                    },
+                                                    "category": {
+                                                        "type": "string"
+                                                    },
+                                                    "profile": {
+                                                        "type": "string"
+                                                    },
+                                                    "recommendation": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado"
+                                },
+                                "503": {
+                                    "description": "Servicio temporalmente no disponible"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "Patterns Detection",
+            "description": "Detecta patrones meteorológicos para una ubicación",
+            "files": [
+                "apps/api/app/api/routers/patterns.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/patterns": {
+                        "get": {
+                            "summary": "Detectar patrones meteorológicos",
+                            "description": "Retorna patrones meteorológicos detectados (olas de calor, frío, tormentas, etc.)",
+                            "security": [
+                                {
+                                    "ApiKeyAuth": []
+                                }
+                            ],
+                            "parameters": [
+                                {
+                                    "name": "lat",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Latitud"
+                                },
+                                {
+                                    "name": "lon",
+                                    "in": "query",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "number"
+                                    },
+                                    "description": "Longitud"
+                                },
+                                {
+                                    "name": "hours",
+                                    "in": "query",
+                                    "required": false,
+                                    "schema": {
+                                        "type": "integer",
+                                        "default": 72
+                                    },
+                                    "description": "Horas a analizar"
+                                }
+                            ],
+                            "responses": {
+                                "200": {
+                                    "description": "Patrones detectados",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "location": {
+                                                        "type": "object"
+                                                    },
+                                                    "patterns": {
+                                                        "type": "array"
+                                                    },
+                                                    "pattern_count": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "User Registration",
+            "description": "Registra un nuevo usuario en el sistema",
+            "files": [
+                "apps/api/app/api/routers/auth.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/auth/register": {
+                        "post": {
+                            "summary": "Registrar usuario",
+                            "description": "Crea un nuevo usuario con perfil",
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "username",
+                                                "email",
+                                                "password"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "201": {
+                                    "description": "Usuario creado exitosamente",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "access_token": {
+                                                        "type": "string"
+                                                    },
+                                                    "token_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "user": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "400": {
+                                    "description": "Error de validación"
+                                },
+                                "422": {
+                                    "description": "Datos inválidos"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "User Login",
+            "description": "Autentica un usuario y retorna token de acceso",
+            "files": [
+                "apps/api/app/api/routers/auth.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/auth/login": {
+                        "post": {
+                            "summary": "Iniciar sesión",
+                            "description": "Autentica usuario y retorna JWT token",
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "username": {
+                                                    "type": "string"
+                                                },
+                                                "password": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "username",
+                                                "password"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "Login exitoso",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "access_token": {
+                                                        "type": "string"
+                                                    },
+                                                    "token_type": {
+                                                        "type": "string"
+                                                    },
+                                                    "user": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "Credenciales inválidas"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "API Key Generation",
+            "description": "Genera una API key para un servicio externo",
+            "files": [
+                "apps/api/app/api/routers/auth.py",
+                "apps/api/app/api/main.py"
+            ],
+            "api_doc": {
+                "openapi": "3.0.0",
+                "paths": {
+                    "/api/v1/auth/api-key": {
+                        "post": {
+                            "summary": "Generar API key",
+                            "description": "Genera una API key para un servicio externo (ej: windy)",
+                            "security": [
+                                {
+                                    "BearerAuth": []
+                                }
+                            ],
+                            "requestBody": {
+                                "required": true,
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "service": {
+                                                    "type": "string",
+                                                    "example": "windy"
+                                                }
+                                            },
+                                            "required": [
+                                                "service"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "responses": {
+                                "200": {
+                                    "description": "API key generada",
+                                    "content": {
+                                        "application/json": {
+                                            "schema": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "api_key": {
+                                                        "type": "string"
+                                                    },
+                                                    "service": {
+                                                        "type": "string"
+                                                    },
+                                                    "expires_at": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "rate_limit": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    "description": "No autorizado"
+                                },
+                                "404": {
+                                    "description": "Servicio no encontrado"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

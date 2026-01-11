@@ -1,0 +1,80 @@
+# SkyPulse - Dependencias Unificadas
+# Versión: 3.0.0
+# Fecha: 2025-12-18
+# Nota: Este archivo incluye dependencias de producción y desarrollo
+
+# ============================================================================
+# DEPENDENCIAS DE PRODUCCIÓN
+# ============================================================================
+
+# Framework API (FastAPI + Render)
+fastapi>=0.127.0
+uvicorn>=0.24.0
+
+# Procesamiento de Datos
+# IMPORTANTE: numpy debe instalarse ANTES de netCDF4 (netCDF4 lo necesita para compilar)
+# El orden en requirements.txt no garantiza el orden de instalación, por eso se maneja en buildCommand
+numpy>=1.26.0
+pandas>=2.1.0
+
+# Visualización (para generación de reportes)
+altair>=5.2.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# APIs y HTTP
+requests>=2.31.0
+httpx>=0.25.0
+
+# AWS y NetCDF para Phase 3 - Acceso a WRF-SMN desde AWS Open Data
+boto3>=1.29.0
+botocore>=1.32.0
+netCDF4>=1.6.0
+xarray>=2023.1.0
+s3fs>=2023.1.0
+
+# Utilidades
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+pydantic[email]>=2.8.0
+
+# Autenticación y Seguridad
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.1,<5.0.0  # bcrypt 5.0.0+ tiene problemas de compatibilidad con passlib
+
+# Observabilidad
+prometheus-client>=0.19.0
+
+# Meteosource removido - solo usamos Windy y WRF-SMN (AWS S3)
+
+# Fechas y Tiempo
+python-dateutil>=2.8.2
+
+# PDF Generation
+weasyprint>=65.0
+
+# ============================================================================
+# DEPENDENCIAS DE DESARROLLO
+# ============================================================================
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+
+# Calidad de Código
+black>=23.11.0
+flake8>=6.1.0
+mypy>=1.7.0
+bandit[toml]>=1.7.5
+
+# Type Stubs
+types-requests>=2.31.0
+types-python-dateutil>=2.8.19
+
+# Pre-commit
+pre-commit>=3.5.0
+
+# Rich (resuelve conflicto con reflex: requiere rich>=13,<15)
+rich>=13.0.0,<15.0.0

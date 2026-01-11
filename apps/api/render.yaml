@@ -1,0 +1,32 @@
+# Configuración de Render para SkyPulse API
+# Documentación: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: skypulse-api
+    env: python
+    plan: starter  # $7/mes - cambiar a 'free' para desarrollo
+    region: oregon
+    buildCommand: |
+      cd app && \
+      pip install --upgrade pip && \
+      pip install --no-cache-dir numpy>=1.26.0 && \
+      pip install --no-cache-dir -r requirements.txt
+      # PYTHONPATH se configura para que app.api.main sea importable
+    # IMPORTANTE: Estructura monorepo (apps/api/app/)
+    # El buildCommand se ejecuta desde apps/api/, luego cd app/
+    startCommand: cd app && PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: WINDY_POINT_FORECAST_API_KEY
+        sync: false  # Configurar manualmente en Render Dashboard
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: ENVIRONMENT
+        value: "production"
+      # Opcionales
+      - key: VALID_API_KEYS
+        sync: false
+      # PYTHONPATH se configura en startCommand

@@ -1,0 +1,10 @@
+{
+  "name": "@skypulse/api",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SkyPulse FastAPI Backend",
+  "scripts": {
+    "dev": "PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload",
+    "start": "PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port $PORT"
+  }
+}

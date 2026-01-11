@@ -22,8 +22,14 @@ class SkyPulseAPI {
         // Agregar API key si está disponible
         if (this.apiKey) {
             headers['X-API-Key'] = this.apiKey;
+            console.log('[SkyPulseAPI] 🔑 Enviando API key en header X-API-Key:', this.apiKey.substring(0, 10) + '...');
         } else {
             console.warn('[SkyPulseAPI] ⚠️ API key no configurada. Las peticiones pueden fallar con 401.');
+        }
+        
+        // Log de headers para debug (solo en desarrollo)
+        if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+            console.log('[SkyPulseAPI] 📤 Headers de petición:', headers);
         }
 
         // Timeout por defecto: 10 segundos
@@ -52,6 +58,13 @@ class SkyPulseAPI {
 
             // Manejar errores HTTP
             if (!response.ok) {
+                // Log detallado para errores 401
+                if (response.status === 401) {
+                    console.error('[SkyPulseAPI] ❌ Error 401 - Unauthorized');
+                    console.error('[SkyPulseAPI] 📤 Headers enviados:', headers);
+                    console.error('[SkyPulseAPI] 🔑 API key en cliente:', this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'NO CONFIGURADA');
+                    console.error('[SkyPulseAPI] 🌐 URL:', url);
+                }
                 const error = await response.json().catch(() => ({ detail: response.statusText }));
                 throw new Error(error.detail || `Error ${response.status}: ${response.statusText}`);
             }

@@ -38,14 +38,28 @@ def get_api_key_from_request(request: Request) -> Optional[str]:
     Lee API key del header de manera case-insensitive.
     Starlette/FastAPI normaliza headers, pero intentamos múltiples variantes por seguridad.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # CRÍTICO: Leer de todas las formas posibles (case-insensitive)
     # Starlette normaliza a lowercase, pero algunos proxies pueden cambiar esto
-    api_key = (
-        request.headers.get("X-API-Key") 
-        or request.headers.get("x-api-key")
-        or request.headers.get("X-Api-Key")
-        or request.headers.get("X-API-KEY")
-    )
+    # Intentar todas las variantes posibles
+    api_key = None
+    for header_name in ["X-API-Key", "x-api-key", "X-Api-Key", "X-API-KEY", "x-api-key"]:
+        api_key = request.headers.get(header_name)
+        if api_key:
+            logger.debug(f"🔍 API key encontrada en header '{header_name}'")
+            break
+    
+    # Si no se encontró, listar todos los headers para debug
+    if not api_key:
+        all_headers = dict(request.headers)
+        logger.warning(f"⚠️ API key NO encontrada. Headers disponibles: {list(all_headers.keys())}")
+        # Buscar cualquier header que contenga "api" o "key"
+        for key, value in all_headers.items():
+            if "api" in key.lower() or "key" in key.lower():
+                logger.warning(f"🔍 Header relacionado encontrado: '{key}' = '{value[:20]}...'")
+    
     if api_key:
         return api_key.strip()
     return None

@@ -58,28 +58,10 @@ async def get_current_user(
     return {"username": username, "token": token}
 
 
-class RegisterRequest(BaseModel):
-    """Request para registro de usuario."""
-    username: str
-    email: str
-    password: str
-
-
-class LoginRequest(BaseModel):
-    """Request para login de usuario."""
-    username: str
-    password: str
-
-
 @router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
-async def register(request: RegisterRequest):
+async def register(user_data: UserCreate):
     """Register a new user."""
     try:
-        user_data = UserCreate(
-            username=request.username,
-            email=request.email,
-            password=request.password
-        )
         # Crear perfil por defecto
         from app.models.auth import UserType
         profile_data = UserProfileCreate(
@@ -98,6 +80,12 @@ async def register(request: RegisterRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+class LoginRequest(BaseModel):
+    """Request para login de usuario."""
+    username: str
+    password: str
 
 
 @router.post("/login", response_model=dict)
@@ -153,10 +141,11 @@ async def generate_api_key(
     Requiere autenticación Bearer token.
     """
     try:
-        from app.utils.security import get_api_key as get_service_api_key
+        import os
+        from app.utils.security import API_KEYS
         
         # Obtener API key del servicio solicitado desde variables de entorno
-        service_key = get_service_api_key(request.service)
+        service_key = API_KEYS.get(request.service)
         
         if not service_key:
             raise HTTPException(

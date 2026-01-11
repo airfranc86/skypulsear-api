@@ -21,9 +21,7 @@ def _get_valid_api_keys() -> list[str]:
         return []
     # Split por coma, limpiar espacios y filtrar vacíos
     valid_api_keys = [
-        key.strip() 
-        for key in valid_api_keys_str.split(",") 
-        if key.strip()
+        key.strip() for key in valid_api_keys_str.split(",") if key.strip()
     ]
     return valid_api_keys
 
@@ -39,13 +37,35 @@ def get_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)) -> Optional[s
 
     # API keys válidas (se recalculan en cada llamada)
     valid_api_keys = _get_valid_api_keys()
+    
+    # Log para diagnóstico
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    if not valid_api_keys:
+        logger.warning("⚠️ VALID_API_KEYS está vacío o no configurado")
+        raise HTTPException(
+            status_code=500,
+            detail="API key validation no configurada. Contacte al administrador.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    
+    # Log de diagnóstico (solo primeros 10 caracteres por seguridad)
+    logger.info(
+        f"🔑 Validando API key: {api_key[:10]}... (total válidas: {len(valid_api_keys)})"
+    )
 
     if api_key in valid_api_keys:
+        logger.info(f"✅ API key válida: {api_key[:10]}...")
         return api_key
 
+    # API key no válida
+    logger.warning(
+        f"❌ API key inválida: {api_key[:10]}... (no está en lista de {len(valid_api_keys)} keys válidas)"
+    )
     raise HTTPException(
         status_code=401,
-        detail="API key inválida",
+        detail=f"API key inválida. Proporcione una API key válida en el header X-API-Key.",
         headers={"WWW-Authenticate": "ApiKey"},
     )
 

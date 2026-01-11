@@ -6,7 +6,7 @@ Weather endpoints with basic protection for Phase 1 security implementation.
 
 import logging
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 
 from app.api.dependencies import require_api_key
 
@@ -26,6 +26,7 @@ async def weather_service_health():
 
 @router.get("/current")
 async def get_current_weather(
+    request: Request,
     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude"),
     user_preferences: Optional[Dict[str, Any]] = None,
@@ -61,6 +62,7 @@ async def get_current_weather(
 
 @router.get("/forecast")
 async def get_weather_forecast(
+    request: Request,
     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
     lon: float = Query(..., ge=-180, le=180, description="Longitude"),
     days: int = Query(7, ge=1, le=14, description="Forecast days"),

@@ -4,7 +4,7 @@ Dependencias de seguridad para FastAPI.
 
 import os
 from typing import Optional
-from fastapi import Header, HTTPException, Security
+from fastapi import Header, HTTPException, Security, Request
 from fastapi.security import APIKeyHeader
 
 # API Key Header
@@ -37,9 +37,25 @@ def _get_valid_api_keys() -> list[str]:
     return valid_api_keys
 
 
+def get_api_key_from_request(request: Request) -> Optional[str]:
+    """
+    Lee API key del header de manera case-insensitive.
+    Intenta múltiples variantes del nombre del header.
+    """
+    # Intentar diferentes variantes del header (case-insensitive)
+    header_variants = ["X-API-Key", "x-api-key", "X-Api-Key", "X-API-KEY"]
+    
+    for variant in header_variants:
+        api_key = request.headers.get(variant)
+        if api_key:
+            return api_key.strip()
+    
+    return None
+
+
 def get_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)) -> Optional[str]:
     """
-    Valida API key del header.
+    Valida API key del header usando APIKeyHeader.
 
     Retorna la API key si es válida, None si no se proporciona.
     """
@@ -47,7 +63,7 @@ def get_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)) -> Optional[s
     logger = logging.getLogger(__name__)
     
     if not api_key:
-        logger.debug("⚠️ No se recibió API key en header X-API-Key")
+        logger.debug("⚠️ No se recibió API key desde APIKeyHeader")
         return None
 
     # API keys válidas (se recalculan en cada llamada)
@@ -90,16 +106,52 @@ def get_api_key(api_key: Optional[str] = Security(API_KEY_HEADER)) -> Optional[s
     )
 
 
-def require_api_key(api_key: Optional[str] = Security(get_api_key)) -> str:
+def require_api_key(
+    request: Request,
+    api_key: Optional[str] = Security(get_api_key)
+) -> str:
     """
     Requiere API key para endpoints protegidos.
+    
+    Si APIKeyHeader no encuentra el header, intenta leerlo manualmente desde Request.
+    Esto es necesario porque algunos navegadores/clients normalizan headers a minúsculas.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Si APIKeyHeader no encontró el header, intentar leerlo manualmente
     if not api_key:
-        raise HTTPException(
-            status_code=401,
-            detail="API key requerida. Proporcione X-API-Key en el header.",
-            headers={"WWW-Authenticate": "ApiKey"},
-        )
+        api_key = get_api_key_from_request(request)
+        if api_key:
+            logger.debug("✅ API key encontrada manualmente desde Request headers")
+            # Validar la API key encontrada manualmente
+            valid_api_keys = _get_valid_api_keys()
+            if not valid_api_keys:
+                logger.error("❌ VALID_API_KEYS está vacío")
+                raise HTTPException(
+                    status_code=500,
+                    detail="API key validation no configurada.",
+                    headers={"WWW-Authenticate": "ApiKey"},
+                )
+            api_key_clean = api_key.strip()
+            if api_key_clean in valid_api_keys:
+                logger.info(f"✅ API key válida (encontrada manualmente): {api_key_clean[:10]}...")
+                return api_key_clean
+            else:
+                logger.warning(f"❌ API key inválida (encontrada manualmente): {api_key_clean[:10]}...")
+                raise HTTPException(
+                    status_code=401,
+                    detail="API key inválida.",
+                    headers={"WWW-Authenticate": "ApiKey"},
+                )
+        else:
+            logger.warning("⚠️ No se recibió API key en header X-API-Key (ni desde APIKeyHeader ni manualmente)")
+            raise HTTPException(
+                status_code=401,
+                detail="API key requerida. Proporcione X-API-Key en el header.",
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
+    
     return api_key
 
 

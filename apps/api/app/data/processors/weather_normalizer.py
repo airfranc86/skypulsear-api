@@ -50,29 +50,44 @@ class WeatherNormalizerService:
         # Si la temperatura es > 100, probablemente está en Kelvin
         temperature = data.temperature
         if temperature is not None:
+            original_temp = temperature
             # Temperaturas en Kelvin típicamente están entre 200-350K
             # Temperaturas en Celsius típicamente están entre -50 y 60°C
+            # Si la temperatura es > 100, asumir que está en Kelvin
             if temperature > 100:
-                # Asumir que está en Kelvin y convertir a Celsius
-                original_temp = temperature
+                # Convertir de Kelvin a Celsius
                 temperature = temperature - 273.15
-                logger.debug(
-                    f"Temperatura convertida de Kelvin a Celsius: "
-                    f"{original_temp}K -> {temperature:.2f}°C (fuente: {source_name})"
+                logger.info(
+                    f"🌡️ Temperatura convertida de Kelvin a Celsius: "
+                    f"{original_temp:.2f}K -> {temperature:.2f}°C (fuente: {source_name})"
                 )
-            # Validar que la temperatura convertida esté en rango razonable
-            if temperature is not None and (temperature < -100 or temperature > 100):
-                logger.warning(
-                    f"Temperatura fuera de rango razonable después de conversión: "
-                    f"{temperature}°C (original: {data.temperature}). Ajustando..."
-                )
-                # Si aún está fuera de rango, puede ser un error de conversión
-                # Intentar convertir nuevamente si el valor es muy alto
-                if temperature > 100:
-                    temperature = data.temperature - 273.15
-                elif temperature < -100:
-                    # Si es muy baja, puede ser que ya estaba en Celsius pero muy fría
-                    temperature = data.temperature
+            # Validar que la temperatura convertida esté en rango razonable para Celsius
+            # Rango válido: -100°C a 60°C (según schema)
+            if temperature is not None:
+                if temperature < -100:
+                    logger.warning(
+                        f"⚠️ Temperatura muy baja después de conversión: "
+                        f"{temperature:.2f}°C (original: {original_temp}). Ajustando a -100°C"
+                    )
+                    temperature = -100.0
+                elif temperature > 60:
+                    # Si después de convertir sigue siendo > 60, puede ser un error
+                    # Intentar convertir nuevamente o ajustar
+                    if original_temp > 100:
+                        # Ya se convirtió, pero sigue siendo alta - puede ser un valor extremo
+                        logger.warning(
+                            f"⚠️ Temperatura alta después de conversión: "
+                            f"{temperature:.2f}°C (original: {original_temp}K). "
+                            f"Ajustando a máximo permitido (60°C)"
+                        )
+                        temperature = 60.0
+                    else:
+                        # No se convirtió pero es > 60, puede ser un error de datos
+                        logger.warning(
+                            f"⚠️ Temperatura fuera de rango: {temperature:.2f}°C. "
+                            f"Ajustando a máximo permitido (60°C)"
+                        )
+                        temperature = 60.0
 
         return NormalizedWeatherData(
             source=source,

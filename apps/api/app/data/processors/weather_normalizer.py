@@ -47,47 +47,28 @@ class WeatherNormalizerService:
 
         # Convertir temperatura de Kelvin a Celsius si es necesario
         # Windy devuelve temperatura en Kelvin (típicamente 200-350K)
-        # Si la temperatura es > 100, probablemente está en Kelvin
-        temperature = data.temperature
-        if temperature is not None:
-            original_temp = temperature
-            # Temperaturas en Kelvin típicamente están entre 200-350K
-            # Temperaturas en Celsius típicamente están entre -50 y 60°C
-            # Si la temperatura es > 100, asumir que está en Kelvin
-            if temperature > 100:
-                # Convertir de Kelvin a Celsius
-                temperature = temperature - 273.15
+        # CRÍTICO: Convertir ANTES de crear NormalizedWeatherData
+        temperature_celsius = None
+        if data.temperature is not None:
+            temp_value = float(data.temperature)
+            original_temp = temp_value
+            
+            # Si temperatura > 100, está en Kelvin - convertir a Celsius
+            if temp_value > 100:
+                temp_value = temp_value - 273.15
                 logger.info(
-                    f"🌡️ Temperatura convertida de Kelvin a Celsius: "
-                    f"{original_temp:.2f}K -> {temperature:.2f}°C (fuente: {source_name})"
+                    f"🌡️ Temperatura convertida: {original_temp:.2f}K -> {temp_value:.2f}°C (fuente: {source_name})"
                 )
-            # Validar que la temperatura convertida esté en rango razonable para Celsius
-            # Rango válido: -100°C a 60°C (según schema)
-            if temperature is not None:
-                if temperature < -100:
-                    logger.warning(
-                        f"⚠️ Temperatura muy baja después de conversión: "
-                        f"{temperature:.2f}°C (original: {original_temp}). Ajustando a -100°C"
-                    )
-                    temperature = -100.0
-                elif temperature > 60:
-                    # Si después de convertir sigue siendo > 60, puede ser un error
-                    # Intentar convertir nuevamente o ajustar
-                    if original_temp > 100:
-                        # Ya se convirtió, pero sigue siendo alta - puede ser un valor extremo
-                        logger.warning(
-                            f"⚠️ Temperatura alta después de conversión: "
-                            f"{temperature:.2f}°C (original: {original_temp}K). "
-                            f"Ajustando a máximo permitido (60°C)"
-                        )
-                        temperature = 60.0
-                    else:
-                        # No se convirtió pero es > 60, puede ser un error de datos
-                        logger.warning(
-                            f"⚠️ Temperatura fuera de rango: {temperature:.2f}°C. "
-                            f"Ajustando a máximo permitido (60°C)"
-                        )
-                        temperature = 60.0
+            
+            # Asegurar que esté en rango válido para Pydantic (-100°C a 60°C)
+            if temp_value < -100:
+                logger.warning(f"⚠️ Temp muy baja: {temp_value:.2f}°C, ajustando a -100°C")
+                temperature_celsius = -100.0
+            elif temp_value > 60:
+                logger.warning(f"⚠️ Temp muy alta: {temp_value:.2f}°C, ajustando a 60°C")
+                temperature_celsius = 60.0
+            else:
+                temperature_celsius = round(temp_value, 2)
 
         return NormalizedWeatherData(
             source=source,
@@ -95,7 +76,7 @@ class WeatherNormalizerService:
             forecast_hour=forecast_hour,
             latitude=data.latitude or 0.0,
             longitude=data.longitude or 0.0,
-            temperature_celsius=temperature,
+            temperature_celsius=temperature_celsius,  # Ya convertido y validado
             wind_speed_ms=data.wind_speed,
             wind_direction_deg=data.wind_direction,
             precipitation_mm=data.precipitation,

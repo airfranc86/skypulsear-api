@@ -36,29 +36,37 @@ def _get_valid_api_keys() -> list[str]:
 def get_api_key_from_request(request: Request) -> Optional[str]:
     """
     Lee API key del header de manera case-insensitive.
-    Starlette/FastAPI normaliza headers, pero intentamos múltiples variantes por seguridad.
+    
+    CRÍTICO: Starlette normaliza TODOS los headers a lowercase con guiones.
+    'X-API-Key' se convierte en 'x-api-key' automáticamente.
     """
     import logging
     logger = logging.getLogger(__name__)
     
-    # CRÍTICO: Leer de todas las formas posibles (case-insensitive)
-    # Starlette normaliza a lowercase, pero algunos proxies pueden cambiar esto
-    # Intentar todas las variantes posibles
-    api_key = None
-    for header_name in ["X-API-Key", "x-api-key", "X-Api-Key", "X-API-KEY", "x-api-key"]:
-        api_key = request.headers.get(header_name)
-        if api_key:
-            logger.debug(f"🔍 API key encontrada en header '{header_name}'")
-            break
+    # Starlette normaliza headers a lowercase, así que 'X-API-Key' -> 'x-api-key'
+    # Intentar primero la forma normalizada (más común)
+    api_key = request.headers.get("x-api-key")
     
-    # Si no se encontró, listar todos los headers para debug
+    # Si no se encuentra, intentar otras variantes (por si algún proxy no normaliza)
+    if not api_key:
+        for header_name in ["X-API-Key", "X-Api-Key", "X-API-KEY"]:
+            api_key = request.headers.get(header_name)
+            if api_key:
+                logger.debug(f"🔍 API key encontrada en header '{header_name}' (no normalizado)")
+                break
+    
+    # Si aún no se encuentra, buscar en todos los headers (debug)
     if not api_key:
         all_headers = dict(request.headers)
         logger.warning(f"⚠️ API key NO encontrada. Headers disponibles: {list(all_headers.keys())}")
-        # Buscar cualquier header que contenga "api" o "key"
+        # Buscar cualquier header que contenga "api" o "key" (case-insensitive)
         for key, value in all_headers.items():
-            if "api" in key.lower() or "key" in key.lower():
+            key_lower = key.lower()
+            if "api" in key_lower and "key" in key_lower:
                 logger.warning(f"🔍 Header relacionado encontrado: '{key}' = '{value[:20]}...'")
+                # Intentar usar este header como API key
+                api_key = value
+                break
     
     if api_key:
         return api_key.strip()

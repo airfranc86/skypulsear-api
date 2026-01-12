@@ -3,11 +3,13 @@ Router de health check para Render.
 """
 
 import os
+from typing import Dict, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.data.repositories.repository_factory import RepositoryFactory
 from app.utils.logging_config import get_logger
+from app.api.dependencies import get_api_key_from_request
 
 logger = get_logger(__name__)
 
@@ -18,6 +20,46 @@ router = APIRouter()
 async def health_check() -> dict[str, str]:
     """Health check endpoint para Render."""
     return {"status": "healthy", "service": "skypulse-api"}
+
+
+@router.get("/debug/api-key")
+async def debug_api_key(request: Request) -> Dict[str, Any]:
+    """
+    Endpoint de diagnóstico para verificar recepción de API key.
+    NO requiere autenticación - solo muestra qué está recibiendo el servidor.
+    """
+    # Obtener API key del request (si existe)
+    api_key_received = get_api_key_from_request(request)
+    
+    # Obtener todos los headers
+    all_headers = dict(request.headers)
+    
+    # Verificar configuración de VALID_API_KEYS
+    valid_api_keys_env = os.getenv("VALID_API_KEYS", "")
+    valid_api_keys_list = [key.strip() for key in valid_api_keys_env.split(",") if key.strip()]
+    
+    # Verificar si la API key recibida es válida
+    is_valid = False
+    if api_key_received and valid_api_keys_list:
+        is_valid = api_key_received.strip() in valid_api_keys_list
+    
+    # Información del código (para verificar si es código nuevo)
+    code_version = "NUEVO"  # Este mensaje solo existe en código nuevo
+    
+    return {
+        "code_version": code_version,
+        "api_key_received": api_key_received[:10] + "..." if api_key_received else None,
+        "api_key_length": len(api_key_received) if api_key_received else 0,
+        "api_key_valid": is_valid,
+        "valid_api_keys_configured": len(valid_api_keys_list) > 0,
+        "valid_api_keys_count": len(valid_api_keys_list),
+        "headers_received": {
+            k: v[:20] + "..." if len(v) > 20 else v 
+            for k, v in all_headers.items()
+        },
+        "x_api_key_header": all_headers.get("X-API-Key") or all_headers.get("x-api-key") or "NO ENCONTRADO",
+        "message": "Este endpoint muestra qué está recibiendo el servidor sin requerir autenticación"
+    }
 
 
 @router.get("/debug/repos")

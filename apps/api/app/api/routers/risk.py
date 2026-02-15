@@ -192,9 +192,14 @@ async def calculate_risk_score(
                 f"{len(patterns)} patrón(es) meteorológico(s) detectado(s)"
             )
 
+        category_str = (
+            risk_score.category.value
+            if hasattr(risk_score.category, "value")
+            else risk_score.category
+        )
         return RiskScoreResponse(
             score=risk_score.score,
-            category=risk_score.category.value,
+            category=category_str,
             risk_score_100=risk_score_100,
             temperature_risk=risk_score.temperature_risk,
             wind_risk=risk_score.wind_risk,

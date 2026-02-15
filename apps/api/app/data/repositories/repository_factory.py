@@ -127,23 +127,8 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     except Exception as e:
         logger.warning(f"No se pudo crear repositorio Windy: {e}")
 
-    # WRF-SMN (AWS S3 - sin fallback a Meteosource)
-    if WRFSMN_AVAILABLE:
-        try:
-            # Intentar crear repositorio WRF-SMN
-            # No requiere credenciales AWS (Open Data)
-            # use_meteosource_fallback=False - solo usar AWS S3
-            repositories["WRF-SMN"] = create_repository(
-                "wrfsmn", use_meteosource_fallback=False
-            )
-            logger.info("Repositorio WRF-SMN creado (solo AWS S3)")
-        except Exception as e:
-            logger.warning(f"No se pudo crear repositorio WRF-SMN: {e}")
-    else:
-        logger.info(
-            "WRFSMNRepository no disponible: boto3, s3fs o xarray no están instalados. "
-            "Omitiendo repositorio WRF-SMN."
-        )
+    # WRF-SMN deshabilitado: evita logs de "Archivo no encontrado en S3" y "Forecast hour fuera de rango"
+    # Para reactivar: descomentar bloque y añadir "wrf_smn" en unified_weather_engine._get_available_sources()
 
     logger.info(f"Repositorios creados: {list(repositories.keys())}")
     return repositories

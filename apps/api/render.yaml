@@ -1,5 +1,8 @@
-# Configuración de Render para SkyPulse API
+# Configuración de Render para SkyPulse API (monorepo)
 # Documentación: https://render.com/docs/blueprint-spec
+#
+# Build y start usan ruta desde RAÍZ del repo para no depender del Root Directory.
+# Dejar Root Directory vacío en Dashboard (default).
 
 services:
   - type: web
@@ -8,14 +11,12 @@ services:
     plan: starter  # $7/mes - cambiar a 'free' para desarrollo
     region: oregon
     buildCommand: |
-      cd app && \
+      cd apps/api/app && \
       pip install --upgrade pip && \
-      pip install --no-cache-dir numpy>=1.26.0 && \
+      pip install --no-cache-dir "numpy>=1.26.0" && \
       pip install --no-cache-dir -r requirements.txt
-      # PYTHONPATH se configura para que app.api.main sea importable
-    # IMPORTANTE: Estructura monorepo (apps/api/app/)
-    # El buildCommand se ejecuta desde apps/api/, luego cd app/
-    startCommand: cd app && PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    # PYTHONPATH debe ser el directorio que CONTIENE el paquete "app" (apps/api), no apps/api/app
+    startCommand: cd apps/api && PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION

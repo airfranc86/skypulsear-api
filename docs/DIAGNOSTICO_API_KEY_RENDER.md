@@ -212,6 +212,35 @@ Después del deploy, los logs deberían mostrar:
 
 ---
 
+## 🛠️ Build fallido: "uvicorn: command not found"
+
+Si el deploy en Render falla con:
+
+```
+==> Running build command '   cd apps/api/app && PYTHONPATH=. uvicorn ...'
+bash: line 1: uvicorn: command not found
+==> Build failed 😞
+```
+
+**Causa:** El **Build Command** está usando el comando de **inicio** en lugar del que **instala dependencias**. Así nunca se ejecuta `pip install` y `uvicorn` no está instalado.
+
+**Solución en Render Dashboard:**
+
+1. **Settings** del servicio **skypulse-api** → **Build & Deploy**.
+2. **Root Directory:** dejar **vacío** (raíz del repo). No usar `apps/api`.
+3. **Build Command:** (ruta desde raíz del repo)
+   ```bash
+   cd apps/api/app && pip install --upgrade pip && pip install --no-cache-dir "numpy>=1.26.0" && pip install --no-cache-dir -r requirements.txt
+   ```
+4. **Start Command:** (PYTHONPATH debe ser el directorio que contiene el paquete `app`, es decir `apps/api`)
+   ```bash
+   cd apps/api && PYTHONPATH=. uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+   ```
+
+El `render.yaml` del repo ya trae estos comandos con rutas desde la raíz; si el servicio se crea/actualiza desde el Blueprint, no hace falta tocar el Dashboard.
+
+---
+
 ## ⚠️ Notas Importantes
 
 1. **Render debe actualizar el código** - No hay workaround técnico

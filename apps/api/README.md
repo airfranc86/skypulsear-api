@@ -48,6 +48,7 @@ pip install -r app/requirements.txt
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Opcionales; si no se setean, el acceso a WRF-SMN es anónimo (bucket público `smn-ar-wrf`). |
 | `AWS_DEFAULT_REGION` | Región AWS (default: `us-west-2`). |
 | `RISK_AGENTS_ENABLED` | Opcional. Si `true`, ejecuta Risk Evaluation Agents en background cada 60 s y expone métricas `skypulse_risk_agent_*` en `/api/v1/metrics`. Default: `false`. |
+| `WRF_SMN_ENABLED` | Opcional. Si `true`, habilita la fuente WRF-SMN (S3 `smn-ar-wrf`) en fusión con Windy; circuit breaker y cache 6 h. Default: `false`. Ver RFC M1 en `docs/RFC_M1_M2_M3_MODELADO_AMENAZAS_UX.md`. |
 
 ---
 

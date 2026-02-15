@@ -107,28 +107,40 @@ def create_repository(repository_type: str, **kwargs) -> Optional[IWeatherReposi
         raise ValueError(f"Tipo de repositorio no válido: {repository_type}")
 
 
+def _is_wrf_smn_enabled() -> bool:
+    """Feature toggle: WRF-SMN habilitado solo si WRF_SMN_ENABLED=true."""
+    return os.getenv("WRF_SMN_ENABLED", "false").strip().lower() == "true"
+
+
 def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     """
     Crear todos los repositorios disponibles según configuración.
 
-    Returns:
-        Diccionario con nombre de repositorio como key e instancia como value
+    WRF-SMN se crea solo si WRF_SMN_ENABLED=true (default: false).
     """
-    repositories = {}
+    repositories: Dict[str, IWeatherRepository] = {}
 
     # Windy
     try:
         if os.getenv("WINDY_POINT_FORECAST_API_KEY"):
-            # Solo GFS disponible (modelo global, actualizaciones frecuentes)
-            # CAMS removido: no retorna datos para la región
             windy_gfs = create_repository("windy", default_model="gfs")
             repositories["Windy-GFS"] = windy_gfs
             logger.info("Repositorio Windy-GFS creado")
     except Exception as e:
-        logger.warning(f"No se pudo crear repositorio Windy: {e}")
+        logger.warning("No se pudo crear repositorio Windy: %s", e)
 
-    # WRF-SMN deshabilitado: evita logs de "Archivo no encontrado en S3" y "Forecast hour fuera de rango"
-    # Para reactivar: descomentar bloque y añadir "wrf_smn" en unified_weather_engine._get_available_sources()
+    # WRF-SMN: habilitado por feature toggle WRF_SMN_ENABLED (default false)
+    if _is_wrf_smn_enabled() and WRFSMN_AVAILABLE:
+        try:
+            cache_ttl_hours = 6
+            wrf_smn = WRFSMNRepository(
+                use_meteosource_fallback=False,
+                cache_ttl_hours=cache_ttl_hours,
+            )
+            repositories["WRF-SMN"] = wrf_smn
+            logger.info("Repositorio WRF-SMN creado (WRF_SMN_ENABLED=true)")
+        except Exception as e:
+            logger.warning("No se pudo crear repositorio WRF-SMN: %s", e)
 
-    logger.info(f"Repositorios creados: {list(repositories.keys())}")
+    logger.info("Repositorios creados: %s", list(repositories.keys()))
     return repositories

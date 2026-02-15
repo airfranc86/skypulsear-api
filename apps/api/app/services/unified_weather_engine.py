@@ -173,11 +173,14 @@ class UnifiedWeatherEngine:
         )
 
     def _get_available_sources(self) -> list[str]:
-        """Retorna lista de fuentes disponibles. Solo Windy (WRF-SMN deshabilitado)."""
-        return [
+        """Retorna fuentes disponibles: Windy-GFS siempre; WRF-SMN si WRF_SMN_ENABLED=true."""
+        sources: list[str] = [
             "windy_ecmwf",
             "windy_gfs",
         ]
+        if self.repository_factory.get_repository("wrf_smn") is not None:
+            sources.append("wrf_smn")
+        return sources
 
     def _get_repository(self, source: str):
         """Obtiene repositorio para una fuente."""

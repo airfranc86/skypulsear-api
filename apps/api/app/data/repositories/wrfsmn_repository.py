@@ -17,6 +17,8 @@ from app.utils.s3_utils import s3_bucket_manager
 
 from app.data.repositories.base_repository import IWeatherRepository
 from app.models.weather_data import WeatherData
+from app.utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
+from app.utils.circuit_breaker_registry import register_circuit_breaker
 from app.utils.exceptions import AWSConnectionError, WeatherAPIError
 from app.utils.logging_config import get_logger
 from app.utils.constants import HTTP_TIMEOUT
@@ -95,6 +97,26 @@ class WRFSMNRepository(IWeatherRepository):
         # Cache local (simple, en memoria)
         self._cache: Dict[str, tuple] = {}  # key: (data, timestamp)
 
+        # Circuit breaker para S3/NetCDF (fallos de red, bucket, archivo no encontrado)
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=5,
+            recovery_timeout=60,
+            expected_exception=(
+                ClientError,
+                NoCredentialsError,
+                OSError,
+                FileNotFoundError,
+            ),
+            name="wrf_smn_api",
+        )
+        try:
+            from app.utils.metrics import record_circuit_breaker_state
+
+            record_circuit_breaker_state("wrf_smn_api", "closed")
+        except ImportError:
+            pass
+        register_circuit_breaker("wrf_smn_api", self.circuit_breaker)
+
     def get_current_weather(
         self, latitude: float, longitude: float
     ) -> Optional[WeatherData]:
@@ -108,23 +130,22 @@ class WRFSMNRepository(IWeatherRepository):
         Returns:
             WeatherData con condiciones actuales o None si hay error
         """
-        # WRF-SMN se actualiza 4 veces al día (00, 06, 12, 18 UTC)
-        # Obtener la inicialización más reciente
-        now = datetime.now(UTC)
-        init_hour = (now.hour // 6) * 6  # Redondear a 00, 06, 12, 18
-
-        try:
-            # Intentar desde S3
+        def _fetch() -> Optional[WeatherData]:
+            now = datetime.now(UTC)
+            init_hour = (now.hour // 6) * 6
             weather_data = self._get_from_s3(latitude, longitude, now, init_hour)
             if weather_data:
                 return weather_data
-
-            # Solo AWS S3 - sin fallback
             logger.warning("No se pudieron obtener datos de WRF-SMN desde AWS S3")
             return None
 
-        except Exception as e:
-            logger.error(f"Error obteniendo datos actuales de WRF-SMN: {e}")
+        try:
+            return self.circuit_breaker.call(_fetch)
+        except CircuitBreakerOpenError as e:
+            logger.warning(
+                "Circuit breaker abierto para WRF-SMN",
+                extra={"error": str(e), "circuit_state": self.circuit_breaker.get_state().value},
+            )
             return None
 
     def get_forecast(
@@ -142,18 +163,14 @@ class WRFSMNRepository(IWeatherRepository):
             Lista de WeatherData con pronóstico
         """
         if hours > 72:
-            logger.warning(f"WRF-SMN solo soporta hasta 72 horas, limitando a 72")
+            logger.warning("WRF-SMN solo soporta hasta 72 horas, limitando a 72")
             hours = 72
 
-        # Obtener inicialización más reciente
-        now = datetime.now(UTC)
-        init_hour = (now.hour // 6) * 6
-        init_time = now.replace(hour=init_hour, minute=0, second=0, microsecond=0)
-
-        forecast = []
-
-        try:
-            # Intentar desde S3
+        def _fetch() -> List[WeatherData]:
+            now = datetime.now(UTC)
+            init_hour = (now.hour // 6) * 6
+            init_time = now.replace(hour=init_hour, minute=0, second=0, microsecond=0)
+            forecast: List[WeatherData] = []
             for hour_offset in range(hours):
                 forecast_time = init_time + timedelta(hours=hour_offset)
                 weather_data = self._get_from_s3(
@@ -161,17 +178,19 @@ class WRFSMNRepository(IWeatherRepository):
                 )
                 if weather_data:
                     forecast.append(weather_data)
-
             if forecast:
-                logger.info(f"Pronóstico WRF-SMN obtenido: {len(forecast)} puntos")
-                return forecast
+                logger.info("Pronóstico WRF-SMN obtenido: %s puntos", len(forecast))
+            else:
+                logger.warning("No se pudieron obtener datos de pronóstico WRF-SMN desde AWS S3")
+            return forecast
 
-            # Solo AWS S3 - sin fallback
-            logger.warning("No se pudieron obtener datos de pronóstico WRF-SMN desde AWS S3")
-            return []
-
-        except Exception as e:
-            logger.error(f"Error obteniendo pronóstico de WRF-SMN: {e}")
+        try:
+            return self.circuit_breaker.call(_fetch)
+        except CircuitBreakerOpenError as e:
+            logger.warning(
+                "Circuit breaker abierto para WRF-SMN",
+                extra={"error": str(e), "circuit_state": self.circuit_breaker.get_state().value},
+            )
             return []
 
     def get_historical(

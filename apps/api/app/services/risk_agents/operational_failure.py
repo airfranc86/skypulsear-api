@@ -25,8 +25,8 @@ class OperationalFailureRiskAgent(BaseRiskAgent):
     def __init__(self) -> None:
         super().__init__("operational_failure")
 
-    # Circuit conocido: se reporta aunque aún no esté registrado (p. ej. sin llamar a weather)
-    KNOWN_CIRCUITS = ("windy_api",)
+    # Circuits conocidos: se reportan aunque aún no estén registrados (p. ej. sin llamar a weather)
+    KNOWN_CIRCUITS = ("windy_api", "wrf_smn_api")
 
     def evaluate(self) -> dict[str, Any]:
         """

@@ -148,12 +148,15 @@ class UnifiedWeatherEngine:
                     )
                     futures[future] = source
 
-            for future in as_completed(futures):
+            _current_timeout_seconds = 8
+            for future in as_completed(futures, timeout=_current_timeout_seconds + 2):
                 source = futures[future]
                 try:
-                    data = future.result()
+                    data = future.result(timeout=_current_timeout_seconds)
                     if data:
                         all_data.append(data)
+                except TimeoutError:
+                    logger.warning(f"Timeout obteniendo datos actuales de {source} ({_current_timeout_seconds}s)")
                 except Exception as e:
                     logger.error(f"Error obteniendo datos actuales de {source}: {e}")
 
@@ -213,13 +216,17 @@ class UnifiedWeatherEngine:
                     )
                     futures[future] = source
 
-            for future in as_completed(futures):
+            # Timeout por fuente para no bloquear >10s (frontend corta a 10s)
+            _fetch_timeout_seconds = 8
+            for future in as_completed(futures, timeout=_fetch_timeout_seconds + 2):
                 source = futures[future]
                 try:
-                    data_list = future.result()
+                    data_list = future.result(timeout=_fetch_timeout_seconds)
                     if data_list:
                         all_data.extend(data_list)
                         logger.info(f"Obtenidos {len(data_list)} registros de {source}")
+                except TimeoutError:
+                    logger.warning(f"Timeout obteniendo datos de {source} ({_fetch_timeout_seconds}s)")
                 except Exception as e:
                     logger.error(f"Error obteniendo datos de {source}: {e}")
 

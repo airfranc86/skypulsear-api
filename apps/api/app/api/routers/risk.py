@@ -119,10 +119,27 @@ async def calculate_risk_score(
             hours=request.hours_ahead + 6,  # Obtener más horas para análisis
         )
 
+        # Quick fix producción: devolver 200 con score por defecto en lugar de 503
         if not forecasts:
-            raise HTTPException(
-                status_code=503,
-                detail="No se pudieron obtener datos meteorológicos. Intente más tarde.",
+            logger.warning(
+                "Sin datos meteorológicos; devolviendo risk score por defecto",
+                extra={"latitude": request.lat, "longitude": request.lon},
+            )
+            return RiskScoreResponse(
+                score=0.0,
+                category="muy_bajo",
+                risk_score_100=0.0,
+                temperature_risk=0.0,
+                wind_risk=0.0,
+                precipitation_risk=0.0,
+                storm_risk=0.0,
+                hail_risk=0.0,
+                pattern_risk=0.0,
+                alert_risk=0.0,
+                apparent_temperature=None,
+                recommendations=["Datos meteorológicos no disponibles. Intente más tarde."],
+                key_factors=[],
+                confidence=0.0,
             )
 
         # 2. Detectar patrones

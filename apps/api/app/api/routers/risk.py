@@ -170,8 +170,8 @@ async def calculate_risk_score(
                 recommendations.extend(pattern.recommendations)
         if alerts:
             for alert in alerts:
-                if alert.recommendations:
-                    recommendations.extend(alert.recommendations)
+                if alert.recommendation:
+                    recommendations.append(alert.recommendation)
 
         # Generar key factors
         key_factors = []

@@ -114,7 +114,7 @@ async def get_alerts(
                     title=alert.title,
                     description=alert.description,
                     time_window=alert.time_window,
-                    recommendations=alert.recommendations or [],
+                    recommendations=[alert.recommendation] if alert.recommendation else [],
                     confidence=alert.confidence,
                 )
             )

@@ -555,9 +555,9 @@ class WindyRepository(IWeatherRepository):
                 v = wind_v_array[0]
                 if u is not None and v is not None:
                     wind_speed = (u**2 + v**2) ** 0.5  # Magnitud del vector
-                    # Dirección en grados (0 = Norte, 90 = Este, 180 = Sur, 270 = Oeste)
-                    # atan2(u, v) da el ángulo en radianes desde el norte
-                    wind_direction = (math.degrees(math.atan2(u, v)) + 360) % 360
+                    # Convención meteorológica: dirección DESDE la que sopla el viento (0=N, 90=E, 180=S, 270=O)
+                    # Φ = mod(180 + atan2(u, v)°, 360) — u=viento este, v=viento norte
+                    wind_direction = (180 + math.degrees(math.atan2(u, v))) % 360
 
             precipitation = (
                 precip_array[0] if precip_array and len(precip_array) > 0 else None

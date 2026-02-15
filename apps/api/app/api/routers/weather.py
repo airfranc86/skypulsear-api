@@ -47,10 +47,49 @@ def _conditions_from_forecast(f: UnifiedForecast) -> str:
     return "despejado"
 
 
+# Etiquetas de fuente meteorológica para la UI (sin guiones bajos, no exponer IDs internos)
+_METEO_SOURCE_DISPLAY: dict[str, str] = {
+    "windy_ecmwf": "Windy ECMWF",
+    "windy_gfs": "Windy GFS",
+    "windy_icon": "Windy ICON",
+    "wrf_smn": "WRF-SMN",
+}
+
+
+def _meteo_source_display_from_unified(f: UnifiedForecast) -> str:
+    """Construye una única etiqueta para la UI a partir de sources_used (opción B, sin exponer lista)."""
+    used = getattr(f, "sources_used", None) or []
+    if not used:
+        return "Windy + WRF-SMN"
+    windy_order = ("windy_gfs", "windy_ecmwf", "windy_icon")
+    windy_labels: list[str] = []
+    wrf_label: Optional[str] = None
+    for s in used:
+        src = getattr(s, "value", s) if hasattr(s, "value") else str(s)
+        if src == "wrf_smn":
+            wrf_label = "WRF-SMN"
+        elif src in _METEO_SOURCE_DISPLAY:
+            windy_labels.append(_METEO_SOURCE_DISPLAY[src])
+    parts: list[str] = []
+    if windy_labels:
+        ordered = [
+            _METEO_SOURCE_DISPLAY[k]
+            for k in windy_order
+            if _METEO_SOURCE_DISPLAY.get(k) in windy_labels
+        ]
+        if not ordered:
+            ordered = sorted(set(windy_labels))
+        parts.append(" + ".join(ordered))
+    if wrf_label:
+        parts.append(wrf_label)
+    return ", ".join(parts) if parts else "Windy + WRF-SMN"
+
+
 def _unified_to_current_response(
     lat: float, lon: float, f: UnifiedForecast
 ) -> dict[str, Any]:
     """Mapea UnifiedForecast a la estructura que espera el frontend para current."""
+    ts = f.timestamp.isoformat() if f.timestamp else None
     return {
         "location": {"lat": lat, "lon": lon},
         "current": {
@@ -58,10 +97,16 @@ def _unified_to_current_response(
             "humidity": int(f.humidity_pct) if f.humidity_pct is not None else 0,
             "wind_speed": f.wind_speed_ms if f.wind_speed_ms is not None else 0,
             "wind_direction": _deg_to_cardinal(f.wind_direction_deg),
+            "wind_direction_deg": int(f.wind_direction_deg) if f.wind_direction_deg is not None else None,
             "pressure": int(f.pressure_hpa) if f.pressure_hpa is not None else 1013,
             "conditions": _conditions_from_forecast(f),
+            "precipitation": f.precipitation_mm if f.precipitation_mm is not None else 0,
+            "cloud_cover": int(f.cloud_cover_pct) if f.cloud_cover_pct is not None else 0,
+            "weather_code": 0,
+            "timestamp": ts,
         },
         "source": "fused",
+        "meteo_source_display": _meteo_source_display_from_unified(f),
         "authentication": "protected",
         "api_key_valid": True,
     }

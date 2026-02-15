@@ -160,6 +160,7 @@ Si está bien, verás `"status":"ok"`. Si sale 401, la variable en Render no est
 | **Build falla** | Con Root Directory = `apps/web`, pon Build Command vacío o `echo "static"`. No hace falta `pnpm install` ni `npm run build` real. |
 | **404 en /dashboard.html** | Comprueba que `dashboard.html` esté en la raíz de `apps/web` y que [apps/web/.vercelignore](apps/web/.vercelignore) no excluya `*.html`. |
 | **JS/CSS no cargan** | Comprueba que `js/`, `alert-engine.js`, etc. no estén en `.vercelignore` dentro de `apps/web`. |
+| **Botón tema (light/dark) no aparece en Vercel** | Hard refresh (Ctrl+Shift+R o Cmd+Shift+R). Si sigue sin verse: en Vercel → Deployments → … del último deploy → **Redeploy** con **Clear Build Cache**. El botón tiene estilos inline de respaldo para que sea visible aunque falle caché. |
 | **Proyecto “skypulse-ar”** | Si tu proyecto tiene otro nombre, cambia solo la referencia en este doc; los pasos son los mismos. |
 
 ---

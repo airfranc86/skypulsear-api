@@ -4,7 +4,11 @@
   "private": true,
   "description": "SkyPulse Frontend",
   "scripts": {
-    "dev": "echo 'Frontend estático - abrir apps/web/dashboard.html en navegador'",
+    "dev": "serve -l 3000",
+    "start": "serve -l 3000",
     "build": "echo 'Frontend estático - no build necesario'"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
   }
 }

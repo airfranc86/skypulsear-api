@@ -2,7 +2,9 @@
 
 Frontend estático del sistema meteorológico SkyPulse: dashboard, páginas informativas y cliente API. Desplegable en Vercel u otro host de estáticos.
 
-**Última actualización:** 2026-02-15
+**Última actualización:** 2026-02-15  
+
+**Auditoría de consistencia:** 2026-02-15 — Conversión m/s → km/h para viento; uso de `wind_direction_deg` cuando la API lo envía; risk sub-scores en 0–5 desde backend. Ver `docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md`.
 
 ---
 
@@ -63,14 +65,44 @@ La ubicación seleccionada se persiste en `localStorage` (`skypulse_location`). 
 2. Si falla (401, timeout, etc.), se usa **Open-Meteo** (API gratuita, sin API key) como fallback.
 3. Si también falla, se muestran datos de ejemplo.
 
+### Mapeo y unidades (consistencia con la API)
+
+- **Viento:** La API y Open-Meteo envían velocidad en **m/s**. El dashboard convierte a **km/h** (× 3.6) al construir `current` y `hourly`, de modo que el valor mostrado y el cálculo de riesgo local usan la misma unidad.
+- **Dirección del viento:** Se usa `wind_direction_10m` en grados (0–360) si la API envía `wind_direction_deg`; si no, se usa el cardinal (`wind_direction`, ej. "S"). La etiqueta y el color por dirección son coherentes cuando el backend envía grados.
+- **Risk:** El backend devuelve `score` (0–5) y sub-scores en 0–5. El frontend multiplica los sub-scores por 20 para las barras 0–100.
+- **Campos de current:** Se normalizan a `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m`, `wind_direction_10m`, `precipitation`, `cloud_cover`, `weather_code`, `surface_pressure`, `time` según contrato en [AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md](../../docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md).
+
 ---
 
-## Ejecución local
+## Build y ejecución local (terminal)
 
-- Abrir `dashboard.html` directamente en el navegador, o
-- Servir la carpeta, por ejemplo:  
-  `npx serve -l 3000`  
-  y abrir `http://localhost:3000/dashboard.html`
+Desde la carpeta **`apps/web`**:
+
+```bash
+# Instalar dependencias (solo la primera vez; incluye servidor estático para dev)
+pnpm install
+
+# Previsualizar el frontend (servidor en http://localhost:3000)
+pnpm run dev
+# o
+pnpm start
+```
+
+Luego abre en el navegador: **http://localhost:3000** (redirige a dashboard) o **http://localhost:3000/dashboard.html**.
+
+```bash
+# "Build" (frontend estático: no hay compilación; el script solo informa)
+pnpm run build
+```
+
+**Resumen:**
+
+| Comando        | Descripción                                      |
+|----------------|--------------------------------------------------|
+| `pnpm install` | Instala dependencias (ej. `serve` para dev).    |
+| `pnpm run dev` | Sirve la carpeta en http://localhost:3000.       |
+| `pnpm start`   | Igual que `dev` (alias).                         |
+| `pnpm run build` | No hace build real; solo mensaje informativo.  |
 
 Para que la API local funcione sin CORS, el backend debe estar en marcha (p. ej. en otro puerto) y `CONFIG.backendUrl` apuntando a esa URL.
 
@@ -78,7 +110,7 @@ Para que la API local funcione sin CORS, el backend debe estar en marcha (p. ej.
 
 ## Despliegue (Vercel)
 
-- Proyecto estático; build opcional (`package.json` tiene scripts de placeholder).
+- Proyecto estático; `pnpm run dev` / `pnpm start` sirven la carpeta localmente (ver sección anterior).
 - `vercel.json` define headers (p. ej. cache para HTML) y rutas.
 - Desplegar desde la raíz del monorepo apuntando a `apps/web` como directorio de salida, o desde `apps/web` con `vercel` y raíz de publicación adecuada.
 

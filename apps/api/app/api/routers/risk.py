@@ -197,21 +197,25 @@ async def calculate_risk_score(
             if hasattr(risk_score.category, "value")
             else risk_score.category
         )
+        # Servicio devuelve sub-scores en 0-100; API expone 0-5 para el frontend (que multiplica por 20 para barras)
+        def to_api_scale(val: float) -> float:
+            return round(val / 20.0, 1)
+
         return RiskScoreResponse(
             score=risk_score.score,
             category=category_str,
             risk_score_100=risk_score_100,
-            temperature_risk=risk_score.temperature_risk,
-            wind_risk=risk_score.wind_risk,
-            precipitation_risk=risk_score.precipitation_risk,
-            storm_risk=risk_score.storm_risk,
-            hail_risk=risk_score.hail_risk,
-            pattern_risk=risk_score.pattern_risk,
-            alert_risk=risk_score.alert_risk,
+            temperature_risk=to_api_scale(float(risk_score.temperature_risk)),
+            wind_risk=to_api_scale(float(risk_score.wind_risk)),
+            precipitation_risk=to_api_scale(float(risk_score.precipitation_risk)),
+            storm_risk=to_api_scale(float(risk_score.storm_risk)),
+            hail_risk=to_api_scale(float(risk_score.hail_risk)),
+            pattern_risk=to_api_scale(float(risk_score.pattern_risk)),
+            alert_risk=to_api_scale(float(getattr(risk_score, "alert_risk", 0))),
             apparent_temperature=risk_score.apparent_temperature,
             recommendations=recommendations[:5],  # Limitar a 5 recomendaciones
             key_factors=key_factors[:5],  # Limitar a 5 factores
-            confidence=risk_score.confidence,
+            confidence=getattr(risk_score, "confidence", 0.5),
         )
     except HTTPException:
         raise

@@ -42,7 +42,9 @@ class OpenMeteoClient {
         const url = buildForecastUrl(lat, lon, 1);
         const res = await fetch(url);
         if (!res.ok) {
-            throw new Error(`Open-Meteo API error: ${res.status} ${res.statusText}`);
+            const err = new Error(`Open-Meteo API error: ${res.status} ${res.statusText}`);
+            err.status = res.status;
+            throw err;
         }
         const data = await res.json();
         const cur = data.current;
@@ -76,7 +78,9 @@ class OpenMeteoClient {
         const url = buildForecastUrl(lat, lon, days);
         const res = await fetch(url);
         if (!res.ok) {
-            throw new Error(`Open-Meteo API error: ${res.status} ${res.statusText}`);
+            const err = new Error(`Open-Meteo API error: ${res.status} ${res.statusText}`);
+            err.status = res.status;
+            throw err;
         }
         const data = await res.json();
         const hourly = data.hourly;

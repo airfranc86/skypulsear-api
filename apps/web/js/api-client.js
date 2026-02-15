@@ -62,7 +62,9 @@ class SkyPulseAPI {
                     console.error('[SkyPulseAPI] 🌐 URL:', url);
                 }
                 const error = await response.json().catch(() => ({ detail: response.statusText }));
-                throw new Error(error.detail || `Error ${response.status}: ${response.statusText}`);
+                const err = new Error(error.detail || `Error ${response.status}: ${response.statusText}`);
+                err.status = response.status;
+                throw err;
             }
 
             return await response.json();

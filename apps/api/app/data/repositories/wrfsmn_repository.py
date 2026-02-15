@@ -570,11 +570,11 @@ def _extract_weather_from_netcdf(
 
                 # Calcular velocidad y dirección del viento
                 wind_speed = float(np.sqrt(wind_u**2 + wind_v**2))
-                wind_direction = float(np.arctan2(wind_v, wind_u) * 180.0 / np.pi)
-
-                # Normalizar dirección (0-360)
-                if wind_direction < 0:
-                    wind_direction += 360.0
+                # WRF U10=este, V10=norte; atan2(V,U) da ángulo del vector. Convertir a convención meteorológica (desde dónde sopla)
+                wind_direction_raw = float(np.arctan2(wind_v, wind_u) * 180.0 / np.pi)
+                if wind_direction_raw < 0:
+                    wind_direction_raw += 360.0
+                wind_direction = (270.0 - wind_direction_raw) % 360.0
 
                 logger.debug(
                     f"Viento extraído: {wind_speed} m/s, dirección {wind_direction}°"

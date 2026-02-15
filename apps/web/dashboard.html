@@ -160,6 +160,12 @@
             border-color: rgba(0, 27, 60, 0.2);
         }
 
+        .theme-toggle:focus,
+        .theme-toggle:focus-visible {
+            outline: 2px solid var(--windy-cyan);
+            outline-offset: 2px;
+        }
+
         .theme-toggle svg {
             width: 24px;
             height: 24px;
@@ -571,7 +577,8 @@
             border-color: rgba(0, 27, 60, 0.2);
         }
 
-        .nav-link:focus {
+        .nav-link:focus,
+        .nav-link:focus-visible {
             outline: 2px solid var(--windy-cyan);
             outline-offset: 2px;
         }
@@ -639,6 +646,7 @@
             gap: var(--space-4);
             order: 3;
             width: 100%;
+            min-width: 0; /* evita overflow horizontal en grid */
         }
 
         @media (min-width: 1024px) {
@@ -713,7 +721,8 @@
             color: var(--light-text);
         }
 
-        .layer-btn:focus {
+        .layer-btn:focus,
+        .layer-btn:focus-visible {
             outline: 2px solid var(--windy-cyan);
             outline-offset: 2px;
         }
@@ -888,11 +897,13 @@
             transform: scale(1.1);
         }
 
-        .timeline-slider:focus {
+        .timeline-slider:focus,
+        .timeline-slider:focus-visible {
             outline: none;
         }
 
-        .timeline-slider:focus::-webkit-slider-thumb {
+        .timeline-slider:focus::-webkit-slider-thumb,
+        .timeline-slider:focus-visible::-webkit-slider-thumb {
             box-shadow: 0 2px 12px rgba(0, 209, 255, 0.5), 0 0 0 6px rgba(0, 209, 255, 0.25);
         }
 
@@ -1052,6 +1063,7 @@
             gap: var(--space-4);
             order: 2;
             width: 100%;
+            min-width: 0; /* evita overflow horizontal en grid */
         }
 
         /* ============ ALERT BANNER ============ */
@@ -1898,7 +1910,8 @@
             color: var(--light-text);
         }
 
-        .profile-btn:focus {
+        .profile-btn:focus,
+        .profile-btn:focus-visible {
             outline: 2px solid var(--windy-cyan);
             outline-offset: 2px;
         }
@@ -2733,6 +2746,8 @@
 
         .alert-floating-actions {
             display: flex;
+            flex-direction: row;
+            direction: ltr;
             gap: var(--space-2);
             margin-top: var(--space-3);
         }
@@ -2956,6 +2971,19 @@
             border-radius: 50%;
             box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
             animation: livePulse 1.5s ease-out infinite;
+        }
+
+        /* Log camuflado: referencia visual mínima de la fuente de datos */
+        .source-log {
+            font-size: 0.55rem;
+            font-weight: 500;
+            opacity: 0.65;
+            letter-spacing: 0.03em;
+            margin-left: 2px;
+        }
+
+        body.light .source-log {
+            opacity: 0.55;
         }
 
         @keyframes livePulse {
@@ -3806,7 +3834,7 @@
 </head>
 
 <body>
-    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" style="position:fixed;z-index:9999;right:1.5rem;bottom:1.5rem;width:48px;height:48px;border-radius:9999px;background:rgba(0,209,255,0.15);border:1px solid rgba(0,209,255,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="12" cy="12" r="5" />
             <line x1="12" y1="1" x2="12" y2="3" />
@@ -4013,15 +4041,28 @@
         // Inicializar clientes inmediatamente (sincrónico)
         initializeClients();
 
-        // Cargar reglas de alertas de forma asíncrona
+        // Cargar reglas de alertas de forma asíncrona (manejo 404: reglas por defecto)
         (async () => {
             try {
                 const rulesResponse = await fetch('alert-rules.json');
-                alertRules = await rulesResponse.json();
+                if (!rulesResponse.ok) {
+                    if (rulesResponse.status === 404) {
+                        alertRules = {};
+                        console.warn('[SkyPulse] alert-rules.json no encontrado (404), usando reglas por defecto');
+                    } else {
+                        throw new Error(`HTTP ${rulesResponse.status}: ${rulesResponse.statusText}`);
+                    }
+                } else {
+                    alertRules = await rulesResponse.json();
+                }
                 alertEngine = new AlertEngine(alertRules);
                 console.log('[SkyPulse] Motor de alertas inicializado');
             } catch (error) {
                 console.error('[SkyPulse] Error cargando reglas de alertas:', error);
+                alertRules = {};
+                try {
+                    alertEngine = new AlertEngine(alertRules);
+                } catch (_) {}
             }
         })();
 
@@ -4181,13 +4222,13 @@
         // ============ PERFILES DE USUARIO ============
         const PROFILES = {
             general: { name: 'General', icon: PROFILE_ICONS.general, weights: { temp: 0.25, wind: 0.25, precip: 0.25, pattern: 0.25 } },
-            pilot: { name: 'Aviación', icon: PROFILE_ICONS.pilot, weights: { temp: 0.1, wind: 0.4, precip: 0.25, pattern: 0.25 }, link: 'aviacion-demo.html' },
             trucker: { name: 'Camionero', icon: PROFILE_ICONS.trucker, weights: { temp: 0.15, wind: 0.3, precip: 0.35, pattern: 0.2 } },
             farmer: { name: 'Agricultor', icon: PROFILE_ICONS.farmer, weights: { temp: 0.3, wind: 0.15, precip: 0.3, pattern: 0.25 } },
             outdoor_sports: { name: 'Deporte', icon: PROFILE_ICONS.outdoor_sports, weights: { temp: 0.3, wind: 0.25, precip: 0.3, pattern: 0.15 } },
             outdoor_event: { name: 'Evento', icon: PROFILE_ICONS.outdoor_event, weights: { temp: 0.2, wind: 0.25, precip: 0.35, pattern: 0.2 } },
             construction: { name: 'Construcción', icon: PROFILE_ICONS.construction, weights: { temp: 0.2, wind: 0.35, precip: 0.25, pattern: 0.2 } },
-            tourism: { name: 'Turismo', icon: PROFILE_ICONS.tourism, weights: { temp: 0.15, wind: 0.15, precip: 0.25, pattern: 0.45 } }
+            tourism: { name: 'Turismo', icon: PROFILE_ICONS.tourism, weights: { temp: 0.15, wind: 0.15, precip: 0.25, pattern: 0.45 } },
+            pilot: { name: 'Aviación', icon: PROFILE_ICONS.pilot, weights: { temp: 0.1, wind: 0.4, precip: 0.25, pattern: 0.25 }, link: 'aviacion-demo.html' }
         };
 
         let currentProfile = 'general';
@@ -4526,7 +4567,8 @@
                             max_level: 0,
                             max_level_name: 'Normal'
                         },
-                        source: 'offline_example'
+                        source: 'offline_example',
+                        meteoSource: 'offline_example'
                     }
                 };
             };
@@ -4540,7 +4582,7 @@
                     console.log(`[Backend] Intentando obtener datos meteorológicos para (${lat}, ${lon})...`);
 
                     // Obtener datos actuales y pronóstico desde el backend
-                    const [currentWeather, forecast] = await Promise.all([
+                    const [backendCurrentResponse, forecast] = await Promise.all([
                         api.getCurrentWeather(lat, lon).catch((err) => {
                             console.warn('[Backend] Error obteniendo datos actuales:', err.message);
                             throw err;
@@ -4551,26 +4593,32 @@
                         })
                     ]);
 
+                    // Backend devuelve { current: { temperature, humidity, wind_speed, ... } }; normalizar a objeto plano
+                    const c = backendCurrentResponse.current || backendCurrentResponse;
+
                     console.log('[Backend] ✅ Datos obtenidos correctamente desde el backend:', {
-                        current: currentWeather.temperature,
+                        current: c.temperature ?? c.temperature_2m,
                         forecast: forecast.forecast?.length || 0
                     });
 
+                    // Backend devuelve viento en m/s; el dashboard y calculateRisks usan km/h
+                    const backendWindMs = c.wind_speed ?? c.wind_speed_10m ?? 0;
+                    const backendWindKmh = typeof backendWindMs === 'number' ? backendWindMs * 3.6 : 0;
                     // Convertir respuesta del backend al formato del frontend
                     const backendData = {
                         current: {
-                            temperature_2m: currentWeather.temperature,
-                            apparent_temperature: currentWeather.temperature, // Backend no tiene apparent_temperature separado
-                            relative_humidity_2m: currentWeather.humidity,
-                            wind_speed_10m: currentWeather.wind_speed,
-                            wind_direction_10m: currentWeather.wind_direction,
-                            wind_gusts_10m: currentWeather.wind_speed * 1.2, // Aproximación
-                            precipitation: currentWeather.precipitation || 0,
-                            weather_code: currentWeather.weather_code || 0,
-                            cloud_cover: currentWeather.cloud_cover,
-                            surface_pressure: currentWeather.pressure ? currentWeather.pressure * 100 : 1013, // Convertir hPa a Pa
-                            uv_index: 5, // No disponible en backend actual
-                            time: currentWeather.timestamp
+                            temperature_2m: c.temperature ?? c.temperature_2m ?? 0,
+                            apparent_temperature: c.apparent_temperature ?? c.temperature ?? c.temperature_2m ?? 0,
+                            relative_humidity_2m: c.humidity ?? c.relative_humidity_2m ?? 0,
+                            wind_speed_10m: backendWindKmh,
+                            wind_direction_10m: c.wind_direction_10m ?? c.wind_direction_deg ?? c.wind_direction ?? 0,
+                            wind_gusts_10m: backendWindKmh * 1.2,
+                            precipitation: c.precipitation ?? 0,
+                            weather_code: c.weather_code ?? 0,
+                            cloud_cover: c.cloud_cover ?? 0,
+                            surface_pressure: c.pressure ? c.pressure * 100 : 1013,
+                            uv_index: 5,
+                            time: c.timestamp ?? c.time ?? new Date().toISOString()
                         },
                         hourly: {
                             time: forecast.forecast?.map(f => f.timestamp) || [],
@@ -4579,7 +4627,7 @@
                             precipitation_probability: forecast.forecast?.map(() => 0) || [], // No disponible
                             precipitation: forecast.forecast?.map(f => f.precipitation || 0) || [],
                             weather_code: forecast.forecast?.map(() => 0) || [], // No disponible
-                            wind_speed_10m: forecast.forecast?.map(f => f.wind_speed) || []
+                            wind_speed_10m: forecast.forecast?.map(f => (typeof f.wind_speed === 'number' ? f.wind_speed * 3.6 : 0)) || []
                         },
                         daily: {
                             sunrise: [],
@@ -4602,7 +4650,9 @@
                         frontend: {
                             riskScore: { score: 0, level: 'normal', apparent_temperature: backendData.current.apparent_temperature, details: {} },
                             alerts: alerts,
-                            source: 'backend'
+                            source: 'backend',
+                            meteoSource: backendCurrentResponse.source || 'fused',
+                            meteoSourceDisplay: backendCurrentResponse.meteo_source_display || null
                         }
                     };
 
@@ -4659,15 +4709,17 @@
                     hourly: hourlyForecast.length
                 });
 
+                // Open-Meteo devuelve viento en m/s; el dashboard y calculateRisks usan km/h
+                const omWindKmh = typeof currentData.wind_speed === 'number' ? currentData.wind_speed * 3.6 : 0;
                 // Convertir a formato compatible con código existente
                 const openMeteoData = {
                     current: {
                         temperature_2m: currentData.temperature,
                         apparent_temperature: currentData.temperature, // Aproximación
                         relative_humidity_2m: currentData.humidity,
-                        wind_speed_10m: currentData.wind_speed,
+                        wind_speed_10m: omWindKmh,
                         wind_direction_10m: currentData.wind_direction,
-                        wind_gusts_10m: currentData.wind_speed * 1.2, // Aproximación
+                        wind_gusts_10m: omWindKmh * 1.2, // Aproximación
                         precipitation: currentData.precipitation,
                         weather_code: currentData.weather_code,
                         cloud_cover: currentData.cloud_cover,
@@ -4682,7 +4734,7 @@
                         precipitation_probability: hourlyForecast.map(() => 0), // No disponible
                         precipitation: hourlyForecast.map(item => item.precipitation_mm || 0),
                         weather_code: hourlyForecast.map(item => item.weather_code),
-                        wind_speed_10m: hourlyForecast.map(item => item.wind_speed)
+                        wind_speed_10m: hourlyForecast.map(item => typeof item.wind_speed === 'number' ? item.wind_speed * 3.6 : 0)
                     },
                     daily: {
                         // Obtener datos diarios desde Open-Meteo
@@ -4706,7 +4758,8 @@
                     frontend: {
                         riskScore: { score: 0, level: 'normal', apparent_temperature: openMeteoData.current.apparent_temperature, details: {} },
                         alerts: alerts,
-                        source: currentData.source || 'open-meteo' // Fallback cuando backend no está disponible
+                        source: currentData.source || 'open-meteo',
+                        meteoSource: 'open-meteo'
                     }
                 };
 
@@ -5159,17 +5212,16 @@
                     meta.appendChild(impactSpan);
                     cardElement.appendChild(meta);
 
-                    // Actions
+                    // Actions (CTA primario primero: Entendido, luego Ver detalles)
                     const actions = createSafeElement('div', { className: 'alert-floating-actions' });
-                    const detailsBtn = createSafeElement('button', { className: 'alert-floating-btn' }, 'Ver detalles');
-                    detailsBtn.addEventListener('click', () => this.expandDetails(card.id));
-                    actions.appendChild(detailsBtn);
-
                     if (alert.level === 4) {
                         const acknowledgeBtn = createSafeElement('button', { className: 'alert-floating-btn primary' }, 'Entendido');
                         acknowledgeBtn.addEventListener('click', () => this.acknowledge(card.id));
                         actions.appendChild(acknowledgeBtn);
                     }
+                    const detailsBtn = createSafeElement('button', { className: 'alert-floating-btn' }, 'Ver detalles');
+                    detailsBtn.addEventListener('click', () => this.expandDetails(card.id));
+                    actions.appendChild(detailsBtn);
                     cardElement.appendChild(actions);
 
                     container.appendChild(cardElement);
@@ -5351,12 +5403,12 @@
                         icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2.5 2.5 0 1 1 11 8H2M12.6 19.4A2.5 2.5 0 1 0 14 16H2"/></svg>';
                         title = 'Viento';
                         value = `${Math.round(current.wind_speed_10m)} km/h`;
-                        const windDir = getWindDirection(current.wind_direction_10m);
+                        const windDir = getWindDirectionLabel(current.wind_direction_10m);
                         comparison = `Del ${windDir}`;
                         if (current.wind_speed_10m > 30) {
                             insight = 'Viento fuerte. Precaución en actividades al aire libre.';
                         } else if (current.wind_speed_10m < 10) {
-                            insight = 'Viento favorable para vuelo VFR.';
+                            insight = 'Viento favorable para vuelo visual (VFR).';
                         } else {
                             insight = 'Condiciones de viento normales.';
                         }
@@ -5795,6 +5847,15 @@
 
                 // ============ BANNER DE ADVERTENCIA (si usa datos de ejemplo) ============
                 const isUsingExampleData = data.frontend && data.frontend.source === 'offline_example';
+                const sourceLabel = (() => {
+                    const display = data.frontend?.meteoSourceDisplay;
+                    if (display && typeof display === 'string') return display;
+                    const s = data.frontend?.meteoSource ?? data.frontend?.source;
+                    if (s === 'open-meteo') return 'Open-Meteo';
+                    if (s === 'offline_example') return 'Ejemplo';
+                    if (s === 'fused' || s === 'backend') return 'Windy + WRF-SMN';
+                    return (typeof s === 'string' ? s.replace(/_/g, ' ') : '—');
+                })();
                 const dataSourceWarning = isUsingExampleData ? `
                         <div class="data-source-warning" role="alert" aria-live="polite">
                             <div class="warning-icon">⚠️</div>
@@ -5809,36 +5870,7 @@
                 const app = document.getElementById('app');
                 app.innerHTML = `
                 ${dataSourceWarning}
-                <!-- Alert Banner -->
-                <div class="alert-banner level-${alert.level}">
-                    <div class="alert-icon">${alert.icon}</div>
-                    <div class="alert-content">
-                        <div class="alert-level">Nivel ${alert.level} • ${alert.levelName}</div>
-                        <div class="alert-title">${alert.title}</div>
-                        <div class="alert-description">${alert.description}</div>
-                    </div>
-                    <div class="alert-meta">
-                        <div class="alert-time-window"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${alert.timeWindow}</div>
-                    </div>
-                    <div class="alert-scale">
-                        <div class="alert-scale-bar">
-                            <div class="alert-scale-segment seg-0 ${0 <= alert.level ? 'active' : 'inactive'} ${0 === alert.level ? 'current' : ''}"></div>
-                            <div class="alert-scale-segment seg-1 ${1 <= alert.level ? 'active' : 'inactive'} ${1 === alert.level ? 'current' : ''}"></div>
-                            <div class="alert-scale-segment seg-2 ${2 <= alert.level ? 'active' : 'inactive'} ${2 === alert.level ? 'current' : ''}"></div>
-                            <div class="alert-scale-segment seg-3 ${3 <= alert.level ? 'active' : 'inactive'} ${3 === alert.level ? 'current' : ''}"></div>
-                            <div class="alert-scale-segment seg-4 ${4 <= alert.level ? 'active' : 'inactive'} ${4 === alert.level ? 'current' : ''}"></div>
-                        </div>
-                        <div class="alert-scale-labels">
-                            <span class="${alert.level === 0 ? 'active' : ''}">Normal</span>
-                            <span class="${alert.level === 1 ? 'active' : ''}">Atención</span>
-                            <span class="${alert.level === 2 ? 'active' : ''}">Precaución</span>
-                            <span class="${alert.level === 3 ? 'active' : ''}">Alerta</span>
-                            <span class="${alert.level === 4 ? 'active' : ''}">Crítico</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Main Grid (Content + Sidebar) -->
+                <!-- Main Grid (Content + Sidebar) - primero: Condiciones Actuales y Banner -->
                 <div class="main-grid">
                 <!-- Main Content -->
                 <div class="main-content">
@@ -5847,131 +5879,75 @@
                         <div class="card-header">
                             <span class="card-title">Condiciones Actuales</span>
                             <span class="source-badge ${isUsingExampleData ? 'source-badge-warning' : ''}" title="${isUsingExampleData ? 'Datos de ejemplo - No hay conexión con la API' : 'Datos en tiempo real'}">
-                                ${isUsingExampleData ? '⚠️ Ejemplo' : 'Live'}
+                                ${isUsingExampleData ? '⚠️ Ejemplo' : 'En vivo'}<span class="source-log" aria-hidden="true">· ${sourceLabel}</span>
                             </span>
                         </div>
                         <div class="metrics-grid">
                             <div class="metric-card" data-metric="temperature">
                                 <div class="metric-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></div>
-                                <div class="metric-value">${current.temperature_2m}<span class="metric-unit">°C</span></div>
+                                <div class="metric-value">${current.temperature_2m != null ? current.temperature_2m : '—'}<span class="metric-unit">°C</span></div>
                                 <div class="metric-label">Temperatura</div>
                             </div>
-                            <div class="metric-card ${current.apparent_temperature >= current.temperature_2m + 2 ? 'metric-warning-hot' : ''} ${current.apparent_temperature <= current.temperature_2m - 2 ? 'metric-warning-cold' : ''}" data-metric="apparent_temperature">
+                            <div class="metric-card ${(current.apparent_temperature != null && current.temperature_2m != null && current.apparent_temperature >= current.temperature_2m + 2) ? 'metric-warning-hot' : ''} ${(current.apparent_temperature != null && current.temperature_2m != null && current.apparent_temperature <= current.temperature_2m - 2) ? 'metric-warning-cold' : ''}" data-metric="apparent_temperature">
                                 <div class="metric-icon">
-                                    ${current.apparent_temperature > current.temperature_2m ?
+                                    ${(current.apparent_temperature != null && current.temperature_2m != null && current.apparent_temperature > current.temperature_2m) ?
                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>' :
                         '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>'
                     }
                                 </div>
-                                <div class="metric-value">${current.apparent_temperature}<span class="metric-unit">°C</span></div>
+                                <div class="metric-value">${current.apparent_temperature != null ? current.apparent_temperature : '—'}<span class="metric-unit">°C</span></div>
                                 <div class="metric-label">Sensación</div>
                             </div>
                             <div class="metric-card" data-metric="wind">
-                                <div class="metric-icon wind-direction" style="--wind-color: ${getWindColor(current.wind_direction_10m)}">
+                                <div class="metric-icon wind-direction" style="--wind-color: ${typeof current.wind_direction_10m === 'number' ? getWindColor(current.wind_direction_10m) : 'var(--windy-cyan)'}">
                                     <!-- Flecha de viento removida temporalmente -->
                                 </div>
-                                <div class="metric-value">${Math.round(current.wind_speed_10m)}<span class="metric-unit">km/h</span></div>
-                                <div class="metric-label">del ${getWindDirection(current.wind_direction_10m)}</div>
+                                <div class="metric-value">${current.wind_speed_10m != null && !Number.isNaN(Number(current.wind_speed_10m)) ? Math.round(Number(current.wind_speed_10m)) : '—'}<span class="metric-unit">km/h</span></div>
+                                <div class="metric-label">del ${getWindDirectionLabel(current.wind_direction_10m)}</div>
                             </div>
                             <div class="metric-card" data-metric="humidity">
                                 <div class="metric-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div>
-                                <div class="metric-value">${current.relative_humidity_2m}<span class="metric-unit">%</span></div>
+                                <div class="metric-value">${current.relative_humidity_2m != null ? current.relative_humidity_2m : '—'}<span class="metric-unit">%</span></div>
                                 <div class="metric-label">Humedad</div>
                             </div>
                             <div class="metric-card" data-metric="cloud_cover">
                                 <div class="metric-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></div>
-                                <div class="metric-value">${current.cloud_cover}<span class="metric-unit">%</span></div>
+                                <div class="metric-value">${current.cloud_cover != null ? current.cloud_cover : '—'}<span class="metric-unit">%</span></div>
                                 <div class="metric-label">Nubosidad</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información Solar -->
-                    ${data.daily ? `
-                    <div class="card solar-card">
-                        <div class="card-header">
-                            <span class="card-title">Información Solar</span>
+                    <!-- Alert Banner (2) -->
+                    <div class="alert-banner level-${alert.level}">
+                        <div class="alert-icon">${alert.icon}</div>
+                        <div class="alert-content">
+                            <div class="alert-level">Nivel ${alert.level} • ${alert.levelName}</div>
+                            <div class="alert-title">${alert.title}</div>
+                            <div class="alert-description">${alert.description}</div>
                         </div>
-                        <div class="solar-grid">
-                            <div class="solar-item">
-                                <div class="solar-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="4"/>
-                                        <path d="M12 2v2"/>
-                                        <path d="M12 20v2"/>
-                                        <path d="m4.93 4.93 1.41 1.41"/>
-                                        <path d="m17.66 17.66 1.41 1.41"/>
-                                        <path d="M2 12h2"/>
-                                        <path d="M20 12h2"/>
-                                        <path d="m6.34 17.66-1.41 1.41"/>
-                                        <path d="m19.07 4.93-1.41 1.41"/>
-                                    </svg>
-                                </div>
-                                <div class="solar-value">${formatSolarTime(data.daily.sunrise?.[0])}</div>
-                                <div class="solar-label">Amanecer</div>
+                        <div class="alert-meta">
+                            <div class="alert-time-window"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${alert.timeWindow}</div>
+                        </div>
+                        <div class="alert-scale">
+                            <div class="alert-scale-bar">
+                                <div class="alert-scale-segment seg-0 ${0 <= alert.level ? 'active' : 'inactive'} ${0 === alert.level ? 'current' : ''}"></div>
+                                <div class="alert-scale-segment seg-1 ${1 <= alert.level ? 'active' : 'inactive'} ${1 === alert.level ? 'current' : ''}"></div>
+                                <div class="alert-scale-segment seg-2 ${2 <= alert.level ? 'active' : 'inactive'} ${2 === alert.level ? 'current' : ''}"></div>
+                                <div class="alert-scale-segment seg-3 ${3 <= alert.level ? 'active' : 'inactive'} ${3 === alert.level ? 'current' : ''}"></div>
+                                <div class="alert-scale-segment seg-4 ${4 <= alert.level ? 'active' : 'inactive'} ${4 === alert.level ? 'current' : ''}"></div>
                             </div>
-                            <div class="solar-item">
-                                <div class="solar-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-                                        <path d="M20 3v4"/>
-                                        <path d="M22 5h-4"/>
-                                        <path d="M17 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
-                                        <path d="M19 21v-4"/>
-                                        <path d="M21 19h-4"/>
-                                    </svg>
-                                </div>
-                                <div class="solar-value">${formatSolarTime(data.daily.sunset?.[0])}</div>
-                                <div class="solar-label">Atardecer</div>
-                            </div>
-                            <div class="solar-item">
-                                <div class="solar-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="5"/>
-                                        <line x1="12" y1="1" x2="12" y2="3"/>
-                                        <line x1="12" y1="21" x2="12" y2="23"/>
-                                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                                        <line x1="1" y1="12" x2="3" y2="12"/>
-                                        <line x1="21" y1="12" x2="23" y2="12"/>
-                                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                                    </svg>
-                                </div>
-                                <div class="solar-value">${calculateDayDuration(data.daily.sunrise?.[0], data.daily.sunset?.[0])}</div>
-                                <div class="solar-label">Duración del Día</div>
-                            </div>
-                            <div class="solar-item">
-                                <div class="solar-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="4"/>
-                                        <path d="M12 2v2"/>
-                                        <path d="M12 20v2"/>
-                                        <path d="m4.93 4.93 1.41 1.41"/>
-                                        <path d="m17.66 17.66 1.41 1.41"/>
-                                        <path d="M2 12h2"/>
-                                        <path d="M20 12h2"/>
-                                        <path d="m6.34 17.66-1.41 1.41"/>
-                                        <path d="m19.07 4.93-1.41 1.41"/>
-                                        <path d="M12 6v2"/>
-                                        <path d="M12 16v2"/>
-                                    </svg>
-                                </div>
-                                <div class="solar-value">
-                                    ${data.current.uv_index !== undefined ?
-                            `${Math.round(data.current.uv_index)} <span class="uv-badge ${getUVCategory(data.current.uv_index).class}">${getUVCategory(data.current.uv_index).label}</span>` :
-                            (data.daily.uv_index_max?.[0] !== undefined ?
-                                `${Math.round(data.daily.uv_index_max[0])} <span class="uv-badge ${getUVCategory(data.daily.uv_index_max[0]).class}">${getUVCategory(data.daily.uv_index_max[0]).label}</span>` :
-                                '--')
-                        }
-                                </div>
-                                <div class="solar-label">Índice UV</div>
+                            <div class="alert-scale-labels">
+                                <span class="${alert.level === 0 ? 'active' : ''}">Normal</span>
+                                <span class="${alert.level === 1 ? 'active' : ''}">Atención</span>
+                                <span class="${alert.level === 2 ? 'active' : ''}">Precaución</span>
+                                <span class="${alert.level === 3 ? 'active' : ''}">Alerta</span>
+                                <span class="${alert.level === 4 ? 'active' : ''}">Crítico</span>
                             </div>
                         </div>
                     </div>
-                    ` : ''}
 
-                    <!-- Profile Selector (Compact) -->
+                    <!-- Profile Selector (Compact) (3) -->
                     <div class="card profile-selector">
                         <div class="card-header">
                             <span class="card-title">Tu Perfil</span>
@@ -5989,7 +5965,15 @@
                         </div>
                     </div>
 
-                    <!-- Índice de Riesgo -->
+                    <!-- Recomendación (4) -->
+                    <div class="card recommendation-card">
+                        <div class="card-header">
+                            <span class="card-title">Recomendación</span>
+                        </div>
+                        <p class="recommendation-text">${recommendation}</p>
+                    </div>
+
+                    <!-- Índice de Riesgo (5) -->
                     <div class="card risk-score-card">
                         <div class="card-header">
                             <span class="card-title">Índice de Riesgo</span>
@@ -6012,7 +5996,7 @@
                         
                         <div class="risk-factors">
                             <div class="risk-factor">
-                                <span class="risk-factor-name"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg> Temp</span>
+                                <span class="risk-factor-name"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg> Temperatura</span>
                                 <div class="risk-factor-bar">
                                     <div class="risk-factor-fill" style="width: ${risks.tempRisk}%; background: ${getRiskColor(risks.tempRisk)};"></div>
                                 </div>
@@ -6048,14 +6032,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Recommendation -->
-                    <div class="card recommendation-card">
-                        <div class="card-header">
-                            <span class="card-title">Recomendación</span>
-                        </div>
-                        <p class="recommendation-text">${recommendation}</p>
-                    </div>
                 </div>
 
                 <!-- Sidebar: Map + Timeline -->
@@ -6065,14 +6041,14 @@
                         <div class="windy-map-header">
                             <span class="windy-map-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg> Mapa en Vivo</span>
                             <div class="windy-layer-toggle">
-                                <button class="layer-btn active" onclick="changeWindyLayer('wind')" title="Viento" aria-label="Ver capa de viento"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></button>
-                                <button class="layer-btn" onclick="changeWindyLayer('rain')" title="Lluvia" aria-label="Ver capa de lluvia"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></button>
+                                <button class="layer-btn" onclick="changeWindyLayer('wind')" title="Viento" aria-label="Ver capa de viento"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg></button>
+                                <button class="layer-btn active" onclick="changeWindyLayer('rain')" title="Lluvia" aria-label="Ver capa de lluvia"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg></button>
                                 <button class="layer-btn" onclick="changeWindyLayer('temp')" title="Temperatura" aria-label="Ver capa de temperatura"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></button>
                             </div>
                         </div>
                         <div class="windy-map-container">
                             <iframe id="windy-iframe"
-                                src="https://embed.windy.com/embed2.html?lat=${CONFIG.location.lat.toFixed(1)}&lon=${CONFIG.location.lon.toFixed(1)}&detailLat=${CONFIG.location.lat.toFixed(1)}&detailLon=${CONFIG.location.lon.toFixed(1)}&zoom=5&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&metricWind=km%2Fh&metricTemp=%C2%B0C"
+                                src="https://embed.windy.com/embed2.html?lat=${CONFIG.location.lat.toFixed(1)}&lon=${CONFIG.location.lon.toFixed(1)}&detailLat=${CONFIG.location.lat.toFixed(1)}&detailLon=${CONFIG.location.lon.toFixed(1)}&zoom=5&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&metricWind=km%2Fh&metricTemp=%C2%B0C"
                                 allowfullscreen
                                 loading="lazy"
                                 referrerpolicy="no-referrer-when-downgrade"
@@ -6246,6 +6222,91 @@
                 </div>
                 </div> <!-- End main-grid -->
 
+                <!-- Información Solar (debajo del grid: primero Condiciones + Banner) -->
+                ${data.daily ? `
+                <div class="card solar-card">
+                    <div class="card-header">
+                        <span class="card-title">Información Solar</span>
+                    </div>
+                    <div class="solar-grid">
+                        <div class="solar-item">
+                            <div class="solar-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2"/>
+                                    <path d="M12 20v2"/>
+                                    <path d="m4.93 4.93 1.41 1.41"/>
+                                    <path d="m17.66 17.66 1.41 1.41"/>
+                                    <path d="M2 12h2"/>
+                                    <path d="M20 12h2"/>
+                                    <path d="m6.34 17.66-1.41 1.41"/>
+                                    <path d="m19.07 4.93-1.41 1.41"/>
+                                </svg>
+                            </div>
+                            <div class="solar-value">${formatSolarTime(data.daily.sunrise?.[0])}</div>
+                            <div class="solar-label">Amanecer</div>
+                        </div>
+                        <div class="solar-item">
+                            <div class="solar-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                                    <path d="M20 3v4"/>
+                                    <path d="M22 5h-4"/>
+                                    <path d="M17 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                                    <path d="M19 21v-4"/>
+                                    <path d="M21 19h-4"/>
+                                </svg>
+                            </div>
+                            <div class="solar-value">${formatSolarTime(data.daily.sunset?.[0])}</div>
+                            <div class="solar-label">Atardecer</div>
+                        </div>
+                        <div class="solar-item">
+                            <div class="solar-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="5"/>
+                                    <line x1="12" y1="1" x2="12" y2="3"/>
+                                    <line x1="12" y1="21" x2="12" y2="23"/>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                    <line x1="1" y1="12" x2="3" y2="12"/>
+                                    <line x1="21" y1="12" x2="23" y2="12"/>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                </svg>
+                            </div>
+                            <div class="solar-value">${calculateDayDuration(data.daily.sunrise?.[0], data.daily.sunset?.[0])}</div>
+                            <div class="solar-label">Duración del Día</div>
+                        </div>
+                        <div class="solar-item">
+                            <div class="solar-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2"/>
+                                    <path d="M12 20v2"/>
+                                    <path d="m4.93 4.93 1.41 1.41"/>
+                                    <path d="m17.66 17.66 1.41 1.41"/>
+                                    <path d="M2 12h2"/>
+                                    <path d="M20 12h2"/>
+                                    <path d="m6.34 17.66-1.41 1.41"/>
+                                    <path d="m19.07 4.93-1.41 1.41"/>
+                                    <path d="M12 6v2"/>
+                                    <path d="M12 16v2"/>
+                                </svg>
+                            </div>
+                            <div class="solar-value">
+                                ${data.current.uv_index !== undefined ?
+                        `${Math.round(data.current.uv_index)} <span class="uv-badge ${getUVCategory(data.current.uv_index).class}">${getUVCategory(data.current.uv_index).label}</span>` :
+                        (data.daily.uv_index_max?.[0] !== undefined ?
+                            `${Math.round(data.daily.uv_index_max[0])} <span class="uv-badge ${getUVCategory(data.daily.uv_index_max[0]).class}">${getUVCategory(data.daily.uv_index_max[0]).label}</span>` :
+                            '--')
+                    }
+                            </div>
+                            <div class="solar-label">Índice UV</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- Footer Profesional -->
                 <footer class="footer">
                     <div class="footer-content">
@@ -6335,11 +6396,13 @@
                     });
                     errorCard.appendChild(createSafeElement('div', { style: 'font-size: 3rem; margin-bottom: 1rem;' }, '⚠️'));
                     errorCard.appendChild(createSafeElement('h2', { style: 'margin-bottom: 0.5rem;' }, 'Error al Renderizar'));
-                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-400);' }, `Error: ${escapeHtml(renderError.message || 'Error desconocido')}`));
+                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-400); margin-bottom: 0.5rem;' }, `Error: ${escapeHtml(renderError.message || 'Error desconocido')}`));
+                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1rem;' }, 'Toque Recargar para reintentar.'));
 
                     const reloadBtn = createSafeElement('button', {
-                        style: 'margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--windy-cyan); border: none; border-radius: 8px; color: #000; font-weight: 600; cursor: pointer;'
+                        style: 'margin-top: 0.5rem; padding: 0.75rem 1.5rem; background: var(--windy-cyan); border: none; border-radius: 8px; color: #000; font-weight: 600; cursor: pointer;'
                     }, 'Recargar');
+                    reloadBtn.setAttribute('aria-label', 'Recargar para reintentar');
                     reloadBtn.addEventListener('click', () => location.reload());
                     errorCard.appendChild(reloadBtn);
 
@@ -6423,6 +6486,13 @@
         const getWindDirection = (degrees) => {
             const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
             return dirs[Math.round(degrees / 22.5) % 16];
+        };
+
+        /** Acepta grados (número) o cardinal (string) y devuelve etiqueta para mostrar */
+        const getWindDirectionLabel = (val) => {
+            if (val == null) return '—';
+            if (typeof val === 'string') return val;
+            return getWindDirection(Number(val));
         };
 
         // ============ WINDY MAP LAYER CHANGE ============
@@ -6512,6 +6582,11 @@
         // ============ PROFILE SELECTION ============
         const selectProfile = async (profile) => {
             currentProfile = profile;
+            try {
+                localStorage.setItem('skypulse_profile', profile);
+            } catch (_) {
+                // ignorar si localStorage no disponible
+            }
             if (weatherData) {
                 await renderDashboard(weatherData);
             }
@@ -6557,19 +6632,18 @@
                 return lineEl;
             };
 
-            // Usar utilidad de anime.js si está disponible
+            // Usar utilidad de anime.js si está disponible (solo anima código; mensajes los controla init por fases reales)
             if (window.AnimeUtils && window.AnimeUtils.animateCodeLoader) {
                 window.AnimeUtils.animateCodeLoader(
                     codeContainer,
                     messageEl,
                     loaderCodeLines,
-                    loaderMessages,
+                    [], // mensajes vacíos: init actualiza #loader-message por fases
                     createLineElement
                 );
             } else {
-                // Fallback al método anterior
+                // Fallback al método anterior (solo líneas de código; mensajes los controla init)
                 let lineIndex = 0;
-                let messageIndex = 0;
 
                 const addLine = () => {
                     if (lineIndex >= loaderCodeLines.length) return;
@@ -6587,17 +6661,8 @@
                     }
                 };
 
-                const updateMessage = () => {
-                    if (messageIndex >= loaderMessages.length) return;
-                    messageEl.textContent = loaderMessages[messageIndex];
-                    messageIndex++;
-                    if (messageIndex < loaderMessages.length) {
-                        setTimeout(updateMessage, 250);
-                    }
-                };
-
+                // Mensajes los controla init por fases reales; no actualizar aquí
                 addLine();
-                updateMessage();
             }
         };
 
@@ -6648,6 +6713,63 @@
                 }
             };
 
+            // Estado de carga del selector de ubicación (evitar multi-click)
+            const setLocationLoading = (loading) => {
+                if (locationElement) {
+                    locationElement.style.pointerEvents = loading ? 'none' : '';
+                    locationElement.setAttribute('aria-busy', loading ? 'true' : 'false');
+                }
+                if (cityElement && loading) {
+                    cityElement.textContent = 'Cargando...';
+                }
+                if (!loading) {
+                    updateLocationDisplay();
+                }
+            };
+
+            // Mostrar error de ubicación con CTA Reintentar (y detección 404)
+            const showLocationError = (error) => {
+                const is404 = (error && error.message && error.message.includes('404')) || (error && error.status === 404);
+                const mainText = is404
+                    ? 'Recurso no encontrado (404). No se pudo cargar el pronóstico para esta ubicación.'
+                    : 'Error al cargar datos de la nueva ubicación.';
+                const container = createSafeElement('div', {
+                    style: 'position: fixed; top: 20px; right: 20px; background: #DC2626; color: white; padding: 1rem 1.25rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 320px;'
+                });
+                container.setAttribute('role', 'alert');
+                container.setAttribute('aria-live', 'polite');
+                const msg = createSafeElement('p', { style: 'margin: 0 0 0.5rem 0; font-size: 0.9rem;' }, mainText);
+                const hint = createSafeElement('p', { style: 'margin: 0 0 0.75rem 0; font-size: 0.8rem; opacity: 0.95;' }, 'Toque Reintentar para esta ubicación.');
+                const retryBtn = createSafeElement('button', {
+                    style: 'padding: 0.5rem 1rem; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; color: white; font-weight: 600; cursor: pointer; font-size: 0.85rem;'
+                }, 'Reintentar');
+                retryBtn.setAttribute('aria-label', 'Reintentar cargar pronóstico para esta ubicación');
+                retryBtn.addEventListener('click', async () => {
+                    retryBtn.disabled = true;
+                    retryBtn.textContent = 'Reintentando...';
+                    try {
+                        const data = await fetchWeatherData(true);
+                        await renderDashboard(data);
+                        setTimeout(() => {
+                            updateLocationDisplay();
+                            renderLocationOptions();
+                        }, 100);
+                        container.remove();
+                    } catch (err) {
+                        console.error('Error al reintentar:', err);
+                        retryBtn.disabled = false;
+                        retryBtn.textContent = 'Reintentar';
+                        msg.textContent = (err.message && err.message.includes('404'))
+                            ? 'Recurso no encontrado (404). No se pudo cargar el pronóstico para esta ubicación.'
+                            : 'Error al cargar datos de la nueva ubicación.';
+                    }
+                });
+                container.appendChild(msg);
+                container.appendChild(hint);
+                container.appendChild(retryBtn);
+                document.body.appendChild(container);
+            };
+
             // Cambiar ubicación
             const changeLocation = async (newLocation) => {
                 if (CONFIG.location.name === newLocation.name) {
@@ -6662,6 +6784,7 @@
                 const app = document.getElementById('app');
 
                 if (window.AnimeUtils && window.AnimeUtils.animateLocationChange) {
+                    setLocationLoading(true);
                     // Usar animación coordinada
                     const timeline = window.AnimeUtils.animateLocationChange(app, async () => {
                         // Callback ejecutado durante fade out
@@ -6688,18 +6811,16 @@
                                 updateLocationDisplay();
                                 renderLocationOptions();
                             }, 100);
+                            setLocationLoading(false);
                         } catch (error) {
                             console.error('Error al cargar datos de la nueva ubicación:', error);
-                            // Mostrar mensaje de error al usuario
-                            const errorMsg = document.createElement('div');
-                            errorMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #DC2626; color: white; padding: 1rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
-                            errorMsg.textContent = 'Error al cargar datos de la nueva ubicación';
-                            document.body.appendChild(errorMsg);
-                            setTimeout(() => errorMsg.remove(), 5000);
+                            setLocationLoading(false);
+                            showLocationError(error);
                         }
                     });
                 } else {
                     // Fallback al método anterior
+                    setLocationLoading(true);
                     app.style.opacity = '0';
                     app.style.transition = 'opacity 0.3s ease';
 
@@ -6731,15 +6852,12 @@
 
                         // Fade in
                         app.style.opacity = '1';
+                        setLocationLoading(false);
                     } catch (error) {
                         console.error('Error al cargar datos de la nueva ubicación:', error);
                         app.style.opacity = '1';
-                        // Mostrar mensaje de error al usuario
-                        const errorMsg = document.createElement('div');
-                        errorMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #DC2626; color: white; padding: 1rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
-                        errorMsg.textContent = 'Error al cargar datos de la nueva ubicación';
-                        document.body.appendChild(errorMsg);
-                        setTimeout(() => errorMsg.remove(), 5000);
+                        setLocationLoading(false);
+                        showLocationError(error);
                     }
                 }
             };
@@ -6752,7 +6870,7 @@
                         console.warn('[Windy] Iframe no encontrado para actualizar ubicación');
                         return;
                     }
-                    const baseUrl = `https://embed.windy.com/embed2.html?lat=${lat.toFixed(1)}&lon=${lon.toFixed(1)}&detailLat=${lat.toFixed(1)}&detailLon=${lon.toFixed(1)}&zoom=5&level=surface&overlay=wind&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&metricWind=km%2Fh&metricTemp=%C2%B0C`;
+                    const baseUrl = `https://embed.windy.com/embed2.html?lat=${lat.toFixed(1)}&lon=${lon.toFixed(1)}&detailLat=${lat.toFixed(1)}&detailLon=${lon.toFixed(1)}&zoom=5&level=surface&overlay=rain&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&metricWind=km%2Fh&metricTemp=%C2%B0C`;
                     iframe.src = baseUrl;
                     console.log('[Windy] Mapa actualizado a:', lat.toFixed(1), lon.toFixed(1));
                 } catch (error) {
@@ -6867,6 +6985,16 @@
             // Limpiar timers anteriores si existen
             timers.clearAll();
 
+            // Restaurar perfil guardado
+            try {
+                const storedProfile = localStorage.getItem('skypulse_profile');
+                if (storedProfile && Object.prototype.hasOwnProperty.call(PROFILES, storedProfile)) {
+                    currentProfile = storedProfile;
+                }
+            } catch (_) {
+                // ignorar si localStorage no disponible
+            }
+
             // Inicializar panel de alertas (Fase 3)
             updateClock();
             timers.clockInterval = setInterval(updateClock, 1000);
@@ -6876,8 +7004,22 @@
 
             try {
                 console.log('[Init] Iniciando carga de datos...');
+                // Fase 1: Conectando
+                const loaderMsg = document.getElementById('loader-message');
+                const loaderBar = document.querySelector('.loader-progress-bar');
+                if (loaderMsg) loaderMsg.textContent = 'Conectando...';
+                if (loaderBar) loaderBar.style.width = '25%';
+
                 const data = await fetchWeatherData();
                 console.log('[Init] Datos obtenidos:', data);
+
+                // Fase 2: Obteniendo datos
+                if (loaderMsg) loaderMsg.textContent = 'Obteniendo datos...';
+                if (loaderBar) loaderBar.style.width = '50%';
+
+                // Fase 3: Renderizando
+                if (loaderMsg) loaderMsg.textContent = 'Renderizando...';
+                if (loaderBar) loaderBar.style.width = '75%';
 
                 // Validar que los datos tengan la estructura esperada
                 if (!data || !data.current || !data.hourly) {
@@ -6888,6 +7030,8 @@
                 await new Promise(resolve => setTimeout(resolve, 300));
 
                 console.log('[Init] Renderizando dashboard...');
+                if (loaderMsg) loaderMsg.textContent = 'Listo';
+                if (loaderBar) loaderBar.style.width = '100%';
                 try {
                     renderDashboard(data);
                     console.log('[Init] Dashboard renderizado correctamente');
@@ -6931,19 +7075,31 @@
                         app.removeChild(app.firstChild);
                     }
 
+                    const is404 = (error.message && error.message.includes('404')) || (error.status === 404);
+                    const mainMessage = is404
+                        ? 'Recurso no encontrado (404). No se pudo cargar el pronóstico.'
+                        : 'No se pudo cargar el pronóstico.';
                     const errorCard = createSafeElement('div', {
                         className: 'card',
                         style: 'grid-column: 1 / -1; text-align: center; padding: 3rem;'
                     });
+                    errorCard.setAttribute('role', 'alert');
+                    errorCard.setAttribute('aria-live', 'polite');
                     errorCard.appendChild(createSafeElement('div', { style: 'font-size: 3rem; margin-bottom: 1rem;' }, '⚠️'));
                     errorCard.appendChild(createSafeElement('h2', { style: 'margin-bottom: 0.5rem;' }, 'Error de Conexión'));
-                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-400); margin-bottom: 1rem;' }, 'No se pudo conectar con la API meteorológica.'));
-                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1rem;' }, `Error: ${escapeHtml(error.message || 'Error desconocido')}`));
+                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-400); margin-bottom: 0.5rem;' }, mainMessage));
+                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-500); font-size: 0.875rem; margin-bottom: 1rem;' }, 'Toque Reintentar para volver a intentar.'));
+                    errorCard.appendChild(createSafeElement('p', { style: 'color: var(--gray-500); font-size: 0.75rem; margin-bottom: 1rem;' }, `Error: ${escapeHtml(error.message || 'Error desconocido')}`));
 
                     const retryBtn = createSafeElement('button', {
-                        style: 'margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--windy-cyan); border: none; border-radius: 8px; color: #000; font-weight: 600; cursor: pointer;'
+                        style: 'margin-top: 0.5rem; padding: 0.75rem 1.5rem; background: var(--windy-cyan); border: none; border-radius: 8px; color: #000; font-weight: 600; cursor: pointer;'
                     }, 'Reintentar');
-                    retryBtn.addEventListener('click', () => location.reload());
+                    retryBtn.setAttribute('aria-label', 'Reintentar cargar pronóstico');
+                    retryBtn.addEventListener('click', () => {
+                        retryBtn.disabled = true;
+                        retryBtn.textContent = 'Reintentando...';
+                        location.reload();
+                    });
                     errorCard.appendChild(retryBtn);
 
                     app.appendChild(errorCard);

@@ -2,7 +2,9 @@
 
 API REST de decisiones meteorológicas para Argentina. Backend FastAPI que fusiona datos de Windy (GFS/ECMWF) y WRF-SMN (AWS S3) mediante `UnifiedWeatherEngine`.
 
-**Última actualización:** 2026-02-15
+**Última actualización:** 2026-02-15  
+
+**Auditoría de consistencia:** 2026-02-15 — Contrato de `/current` ampliado (precipitation, cloud_cover, timestamp, wind_direction_deg). Sub-scores de risk normalizados a 0–5 en la respuesta. Ver `docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md`.
 
 ---
 
@@ -71,6 +73,14 @@ Las peticiones a endpoints protegidos deben incluir el header `X-API-Key: <clave
 | GET | `/api/v1/alerts` | Alertas meteorológicas |
 | GET | `/api/v1/patterns` | Patrones detectados |
 | GET | `/api/v1/metrics` | Métricas Prometheus |
+
+### Contrato y unidades (consistencia con el dashboard)
+
+- **GET /weather/current**: `current` incluye `temperature` (°C), `humidity` (%), `wind_speed` (**m/s**), `wind_direction` (cardinal, ej. "S"), `wind_direction_deg` (0–360), `pressure` (hPa), `precipitation` (mm), `cloud_cover` (%), `weather_code`, `timestamp` (ISO). El frontend convierte `wind_speed` de m/s a km/h (× 3.6).
+- **GET /weather/forecast**: cada ítem tiene `temperature` (°C), `precipitation` (mm), `wind_speed` (m/s). El frontend convierte viento a km/h.
+- **POST /risk-score**: body `{ "lat", "lon", "profile", "hours_ahead" }`. Respuesta: `score` (0–5), `risk_score_100`, sub-scores `temperature_risk`, `wind_risk`, etc. en **escala 0–5** (el router convierte internamente de 0–100 a 0–5). El frontend multiplica sub-scores por 20 para barras 0–100.
+
+Auditoría detallada frontend–backend: ver [docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md](../docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md).
 
 ---
 

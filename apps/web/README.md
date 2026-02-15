@@ -67,7 +67,7 @@ La ubicación seleccionada se persiste en `localStorage` (`skypulse_location`). 
 
 ### Mapeo y unidades (consistencia con la API)
 
-- **Viento:** La API y Open-Meteo envían velocidad en **m/s**. El dashboard convierte a **km/h** (× 3.6) al construir `current` y `hourly`, de modo que el valor mostrado y el cálculo de riesgo local usan la misma unidad.
+- **Viento:** La API devuelve **`wind_speed_kmh`** en current y en cada ítem de forecast; el dashboard usa esos valores en todo el sistema (métricas, riesgo, timeline). Si la API no envía `wind_speed_kmh`, se usa `wind_speed` (m/s) × 3.6. Open-Meteo (fallback) se convierte localmente a km/h.
 - **Dirección del viento:** Se usa `wind_direction_10m` en grados (0–360) si la API envía `wind_direction_deg`; si no, se usa el cardinal (`wind_direction`, ej. "S"). La etiqueta y el color por dirección son coherentes cuando el backend envía grados.
 - **Risk:** El backend devuelve `score` (0–5) y sub-scores en 0–5. El frontend multiplica los sub-scores por 20 para las barras 0–100.
 - **Campos de current:** Se normalizan a `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m`, `wind_direction_10m`, `precipitation`, `cloud_cover`, `weather_code`, `surface_pressure`, `time` según contrato en [AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md](../../docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md).

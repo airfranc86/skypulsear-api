@@ -4090,7 +4090,8 @@
         // ============ CACHE SYSTEM (TTL 30 min) con localStorage ============
         const CACHE_TTL = 30 * 60 * 1000; // 30 minutos en ms
         const CACHE_KEY = 'skypulse_weather_cache';
-        const CACHE_SCHEMA_VERSION = 1;
+        // v2: invalida cache anterior donde wind_speed_10m podía estar en m/s sin convertir a km/h
+        const CACHE_SCHEMA_VERSION = 2;
         const dashboardCache = {
             data: null,
             timestamp: null,
@@ -4601,18 +4602,19 @@
                         forecast: forecast.forecast?.length || 0
                     });
 
-                    // Backend devuelve viento en m/s; el dashboard y calculateRisks usan km/h
-                    const backendWindMs = c.wind_speed ?? c.wind_speed_10m ?? 0;
-                    const backendWindKmh = typeof backendWindMs === 'number' ? backendWindMs * 3.6 : 0;
-                    // Convertir respuesta del backend al formato del frontend
+                    // Usar valores de la API en las unidades del dashboard (API devuelve wind_speed_kmh; fallback m/s * 3.6)
+                    const backendWindKmh = (typeof c.wind_speed_kmh === 'number' ? c.wind_speed_kmh : null)
+                        ?? (typeof (c.wind_speed ?? c.wind_speed_10m) === 'number' ? (c.wind_speed ?? c.wind_speed_10m ?? 0) * 3.6 : 0);
+                    const backendWindKmhNum = typeof backendWindKmh === 'number' ? backendWindKmh : 0;
+                    const forecastWindKmh = (f) => (typeof f.wind_speed_kmh === 'number' ? f.wind_speed_kmh : (typeof f.wind_speed === 'number' ? f.wind_speed * 3.6 : 0));
                     const backendData = {
                         current: {
                             temperature_2m: c.temperature ?? c.temperature_2m ?? 0,
                             apparent_temperature: c.apparent_temperature ?? c.temperature ?? c.temperature_2m ?? 0,
                             relative_humidity_2m: c.humidity ?? c.relative_humidity_2m ?? 0,
-                            wind_speed_10m: backendWindKmh,
+                            wind_speed_10m: backendWindKmhNum,
                             wind_direction_10m: c.wind_direction_10m ?? c.wind_direction_deg ?? c.wind_direction ?? 0,
-                            wind_gusts_10m: backendWindKmh * 1.2,
+                            wind_gusts_10m: backendWindKmhNum * 1.2,
                             precipitation: c.precipitation ?? 0,
                             weather_code: c.weather_code ?? 0,
                             cloud_cover: c.cloud_cover ?? 0,
@@ -4627,7 +4629,7 @@
                             precipitation_probability: forecast.forecast?.map(() => 0) || [], // No disponible
                             precipitation: forecast.forecast?.map(f => f.precipitation || 0) || [],
                             weather_code: forecast.forecast?.map(() => 0) || [], // No disponible
-                            wind_speed_10m: forecast.forecast?.map(f => (typeof f.wind_speed === 'number' ? f.wind_speed * 3.6 : 0)) || []
+                            wind_speed_10m: forecast.forecast?.map(forecastWindKmh) || []
                         },
                         daily: {
                             sunrise: [],

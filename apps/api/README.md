@@ -76,8 +76,8 @@ Las peticiones a endpoints protegidos deben incluir el header `X-API-Key: <clave
 
 ### Contrato y unidades (consistencia con el dashboard)
 
-- **GET /weather/current**: `current` incluye `temperature` (°C), `humidity` (%), `wind_speed` (**m/s**), `wind_direction` (cardinal, ej. "S"), `wind_direction_deg` (0–360), `pressure` (hPa), `precipitation` (mm), `cloud_cover` (%), `weather_code`, `timestamp` (ISO). El frontend convierte `wind_speed` de m/s a km/h (× 3.6).
-- **GET /weather/forecast**: cada ítem tiene `temperature` (°C), `precipitation` (mm), `wind_speed` (m/s). El frontend convierte viento a km/h.
+- **GET /weather/current**: `current` incluye `temperature` (°C), `humidity` (%), `wind_speed` (m/s), **`wind_speed_kmh`** (km/h, para uso directo en la UI), `wind_direction`, `wind_direction_deg`, `pressure` (hPa), `precipitation` (mm), `cloud_cover` (%), `weather_code`, `timestamp` (ISO). El frontend usa `wind_speed_kmh` en todo el sistema.
+- **GET /weather/forecast**: cada ítem tiene `temperature` (°C), `precipitation` (mm), `wind_speed` (m/s), **`wind_speed_kmh`** (km/h). El frontend usa los valores de la API.
 - **POST /risk-score**: body `{ "lat", "lon", "profile", "hours_ahead" }`. Respuesta: `score` (0–5), `risk_score_100`, sub-scores `temperature_risk`, `wind_risk`, etc. en **escala 0–5** (el router convierte internamente de 0–100 a 0–5). El frontend multiplica sub-scores por 20 para barras 0–100.
 
 Auditoría detallada frontend–backend: ver [docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md](../docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md).

@@ -11,7 +11,7 @@ Se auditaron los endpoints consumidos por el dashboard (`/api/v1/weather/current
 
 **Hallazgos principales:**
 
-- **Unidades:** La API devuelve `wind_speed` en **m/s**; el frontend ya convierte a **km/h** (× 3.6) al construir `current` y `hourly`, por lo que el display y el cálculo de riesgo local son coherentes.
+- **Unidades:** La API devuelve **valores listos para la UI**: `wind_speed_kmh` en current y en cada ítem de forecast (además de `wind_speed` en m/s). El frontend usa `wind_speed_kmh` cuando existe, de modo que todo el sistema (métricas, riesgo, timeline) usa los valores devueltos por la API sin conversión local.
 - **Dirección del viento:** La API expone solo `wind_direction` como **cardinal (string)** ("N", "S", …); no expone `wind_direction_deg`. El frontend acepta string o número; si recibe string, la etiqueta se muestra bien pero el color por dirección usa fallback (no hay grados).
 - **Campos faltantes en `/current`:** La API no devuelve `precipitation`, `cloud_cover`, `weather_code`, `timestamp` ni `apparent_temperature` en el objeto `current`. El frontend rellena con `0` o valores por defecto, por lo que no rompe pero muestra datos incompletos (p. ej. nubosidad y precipitación en 0 cuando la fuente es backend).
 - **Risk-score:** El frontend espera sub-scores en escala **0–5** y los multiplica por 20 para barras 0–100. El servicio interno devuelve sub-scores en **0–100**; el router los expone sin convertir. Si el backend envía 0–100, el frontend mostraría barras desproporcionadas; debe existir conversión en backend o ajuste en frontend.
@@ -31,7 +31,7 @@ Se auditaron los endpoints consumidos por el dashboard (`/api/v1/weather/current
 | `temperature_2m`        | `current.temperature` | number    | °C         | °C        | Ninguna   | Ninguna        | Low    | `temperature: 22` → muestra 22°C |
 | `apparent_temperature`  | —                  | —           | —          | °C        | —          | **API no envía**; frontend usa `c.temperature` como fallback | Medium | Backend: sin campo → UI muestra temp real como sensación |
 | `relative_humidity_2m` | `current.humidity` | number      | %          | %         | Ninguna   | Ninguna        | Low    | `humidity: 65` → 65% |
-| `wind_speed_10m`       | `current.wind_speed` | number    | **m/s**    | **km/h**  | **× 3.6** en frontend | Ninguna (ya corregido) | Low    | `wind_speed: 5` → 18 km/h |
+| `wind_speed_10m`       | `current.wind_speed_kmh` (o `wind_speed` m/s) | number | **km/h** (API) o m/s | km/h | API devuelve `wind_speed_kmh`; frontend usa ese valor; fallback m/s×3.6 | Ninguna | Low | API `wind_speed_kmh: 18` → 18 km/h en todo el sistema |
 | `wind_direction_10m`   | `current.wind_direction` | **string** (cardinal) | —  | cardinal  | Frontend acepta string o número | API no envía grados; color por dirección usa fallback | Low    | `wind_direction: "S"` → "Del S" ✓; color no por ángulo |
 | `wind_gusts_10m`       | —                  | —           | —          | km/h      | Frontend: `wind_speed_10m * 1.2` | Estimado en frontend desde viento actual | Low    | — |
 | `precipitation`        | —                  | —           | —          | mm        | —          | **API no envía**; frontend usa 0 | Medium | Siempre 0 cuando fuente = backend |

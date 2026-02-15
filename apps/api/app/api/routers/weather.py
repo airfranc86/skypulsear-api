@@ -88,14 +88,19 @@ def _meteo_source_display_from_unified(f: UnifiedForecast) -> str:
 def _unified_to_current_response(
     lat: float, lon: float, f: UnifiedForecast
 ) -> dict[str, Any]:
-    """Mapea UnifiedForecast a la estructura que espera el frontend para current."""
+    """Mapea UnifiedForecast a la estructura que espera el frontend para current.
+    La API devuelve valores en las unidades que usa el frontend (km/h para viento)
+    para que todo el sistema use una sola fuente de verdad."""
     ts = f.timestamp.isoformat() if f.timestamp else None
+    wind_ms = f.wind_speed_ms if f.wind_speed_ms is not None else 0
+    wind_kmh = round(wind_ms * 3.6, 1)
     return {
         "location": {"lat": lat, "lon": lon},
         "current": {
             "temperature": f.temperature_celsius if f.temperature_celsius is not None else 0,
             "humidity": int(f.humidity_pct) if f.humidity_pct is not None else 0,
-            "wind_speed": f.wind_speed_ms if f.wind_speed_ms is not None else 0,
+            "wind_speed": wind_ms,
+            "wind_speed_kmh": wind_kmh,
             "wind_direction": _deg_to_cardinal(f.wind_direction_deg),
             "wind_direction_deg": int(f.wind_direction_deg) if f.wind_direction_deg is not None else None,
             "pressure": int(f.pressure_hpa) if f.pressure_hpa is not None else 1013,
@@ -113,14 +118,18 @@ def _unified_to_current_response(
 
 
 def _unified_to_forecast_item(f: UnifiedForecast) -> dict[str, Any]:
-    """Mapea un UnifiedForecast a un ítem del array forecast para el frontend."""
+    """Mapea un UnifiedForecast a un ítem del array forecast para el frontend.
+    Incluye wind_speed_kmh para que el frontend use valores de la API sin convertir."""
     ts = f.timestamp.isoformat() if f.timestamp else ""
+    wind_ms = f.wind_speed_ms if f.wind_speed_ms is not None else 0
+    wind_kmh = round(wind_ms * 3.6, 1)
     return {
         "date": ts[:10] if ts else "",
         "timestamp": ts,
         "temperature": f.temperature_celsius if f.temperature_celsius is not None else 0,
         "precipitation": f.precipitation_mm if f.precipitation_mm is not None else 0,
-        "wind_speed": f.wind_speed_ms if f.wind_speed_ms is not None else 0,
+        "wind_speed": wind_ms,
+        "wind_speed_kmh": wind_kmh,
         "conditions": _conditions_from_forecast(f),
     }
 

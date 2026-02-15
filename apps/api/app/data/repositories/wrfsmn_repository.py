@@ -5,6 +5,7 @@ para obtener datos WRF-SMN del Servicio Meteorológico Nacional de Argentina.
 """
 
 import os
+import time
 from typing import List, Optional, Dict, Any
 from datetime import UTC, datetime, timedelta
 import boto3
@@ -140,7 +141,15 @@ class WRFSMNRepository(IWeatherRepository):
             return None
 
         try:
-            return self.circuit_breaker.call(_fetch)
+            t0 = time.perf_counter()
+            result = self.circuit_breaker.call(_fetch)
+            duration = time.perf_counter() - t0
+            try:
+                from app.utils.metrics import record_source_request_duration
+                record_source_request_duration("wrf_smn", "get_current", duration)
+            except ImportError:
+                pass
+            return result
         except CircuitBreakerOpenError as e:
             logger.warning(
                 "Circuit breaker abierto para WRF-SMN",
@@ -185,7 +194,15 @@ class WRFSMNRepository(IWeatherRepository):
             return forecast
 
         try:
-            return self.circuit_breaker.call(_fetch)
+            t0 = time.perf_counter()
+            result = self.circuit_breaker.call(_fetch)
+            duration = time.perf_counter() - t0
+            try:
+                from app.utils.metrics import record_source_request_duration
+                record_source_request_duration("wrf_smn", "get_forecast", duration)
+            except ImportError:
+                pass
+            return result
         except CircuitBreakerOpenError as e:
             logger.warning(
                 "Circuit breaker abierto para WRF-SMN",
@@ -280,16 +297,26 @@ class WRFSMNRepository(IWeatherRepository):
         filename = f"WRFDETAR_01H_{init_date.strftime('%Y%m%d')}_{init_hour:02d}_{forecast_hour:03d}.nc"
         s3_key = f"{self.S3_PREFIX}/{date_str}/{filename}"
 
-        # Verificar cache
+        # Verificar cache (M1.5: métricas cache hit/miss)
         cache_key = f"{s3_key}_{latitude}_{longitude}"
         if cache_key in self._cache:
             cached_data, cached_time = self._cache[cache_key]
             if (
                 datetime.now() - cached_time
             ).total_seconds() < self.cache_ttl_hours * 3600:
+                try:
+                    from app.utils.metrics import record_cache_hit
+                    record_cache_hit("wrf_smn")
+                except ImportError:
+                    pass
                 return cached_data
 
         try:
+            try:
+                from app.utils.metrics import record_cache_miss
+                record_cache_miss("wrf_smn")
+            except ImportError:
+                pass
             # Verificar que s3fs esté configurado
             if not self.s3_fs:
                 logger.warning("S3FileSystem no configurado, no se puede acceder a S3")

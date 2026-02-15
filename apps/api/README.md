@@ -51,6 +51,10 @@ pip install -r app/requirements.txt
 | `WRF_SMN_ENABLED` | Opcional. Si `true`, habilita la fuente WRF-SMN (S3 `smn-ar-wrf`) en fusión con Windy; circuit breaker y cache. Default: `false`. Ver RFC M1 en `docs/RFC_M1_M2_M3_MODELADO_AMENAZAS_UX.md`. |
 | `WRF_SMN_CACHE_TTL_HOURS` | Opcional. TTL del cache local WRF-SMN en horas (1–24). Default: `6`. |
 
+**Verificación de uso WRF-SMN:** Ver [docs/VERIFICACION_WRF_SMN.md](../docs/VERIFICACION_WRF_SMN.md) (respuesta API, `meteo_source_display`, y por qué el dashboard puede mostrar Open-Meteo).
+
+**M1.5 Observabilidad WRF:** Con `WRF_SMN_ENABLED=true`, el repositorio WRF-SMN registra en Prometheus (`/api/v1/metrics`): latencia (`weather_source_request_duration_seconds{source="wrf_smn",operation="get_current|get_forecast"}`), cache hit/miss (`cache_hits_total|cache_misses_total{cache_type="wrf_smn"}`) y estado del circuit breaker (`circuit_breaker_state{circuit_name="wrf_smn"}`). Rollback: `WRF_SMN_ENABLED=false` y redeploy.
+
 ---
 
 ## Ejecución local
@@ -107,8 +111,8 @@ Si `RISK_AGENTS_ENABLED=true`, se ejecutan en background cada 60 s tres agentes 
 
 ## M2 / M3 (RFC)
 
-- **Motor de amenazas (M2):** Contrato de salida en `app/models/threat_classification.py` (`ClassifiedThreat`, `ThreatType`). Uso futuro en pipeline de alertas/patrones.
-- **Categoría de vuelo (M3):** Criterios VFR/MVFR/IFR/LIFR en `app/utils/flight_category.py` (`get_flight_category(visibility_km, ceiling_m)`). Uso: badges OMM/OHMC en dashboard.
+- **Motor de amenazas (M2):** Contrato en `app/models/threat_classification.py` (`ClassifiedThreat`, `ThreatType`). M2.2: módulo `app/services/threat_classification/` con lógica física (dBZ, 0°C) y heurística Shelf/Wall/proxy granizo; entrada `ThreatClassificationInput` (temperatura, precipitación, nubosidad; opcional reflectivity_dbz, freezing_level_m). Sin radar se usan proxies (precip + T baja → posible granizo). Integración en pipeline: M2.3 con `THREAT_CLASSIFICATION_ENABLED`.
+- **Categoría de vuelo (M3):** Criterios en `app/utils/flight_category.py` (`get_flight_category(visibility_km, ceiling_m)`). M3.2: endpoint `GET /api/v1/weather/flight-category?lat=&lon=` (deriva visibilidad/techo heurísticamente); badges dinámicos VFR/MVFR/IFR/LIFR en dashboard (Verde/Azul/Naranja/Rojo); toggle `CONFIG.showFlightCategoryBadge`.
 
 ---
 

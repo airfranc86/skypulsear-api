@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from app.api.dependencies import require_api_key
 from app.services.unified_weather_engine import UnifiedWeatherEngine
 from app.data.schemas.normalized_weather import UnifiedForecast
+from app.utils.flight_category import get_flight_category
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/weather", tags=["weather"])
@@ -218,3 +219,70 @@ async def get_weather_forecast(
     except Exception as e:
         logger.error("Error getting weather forecast: %s", e)
         raise HTTPException(status_code=500, detail="Failed to get forecast")
+
+
+def _derive_visibility_ceiling_from_forecast(f: UnifiedForecast) -> tuple[float, Optional[float]]:
+    """
+    Deriva visibilidad (km) y techo (m) heurísticamente desde nubosidad y precipitación.
+    Sin datos de visibilidad/techo reales; para uso con get_flight_category (M3).
+    """
+    cloud = f.cloud_cover_pct or 0.0
+    precip = f.precipitation_mm or 0.0
+    # Visibilidad: precip fuerte reduce; nubosidad muy alta reduce
+    if precip >= 5.0:
+        visibility_km = max(1.0, 10.0 - precip * 1.5)
+    elif precip >= 2.0:
+        visibility_km = max(2.0, 8.0 - cloud / 20.0)
+    elif cloud >= 90:
+        visibility_km = max(3.0, 10.0 - cloud / 10.0)
+    elif cloud >= 70:
+        visibility_km = max(5.0, 12.0 - cloud / 8.0)
+    else:
+        visibility_km = max(8.0, 15.0 - cloud / 5.0)
+    # Techo: nubosidad alta → techo bajo (OMM/OHMC)
+    if cloud >= 95:
+        ceiling_m = 150.0
+    elif cloud >= 80:
+        ceiling_m = 300.0
+    elif cloud >= 60:
+        ceiling_m = 500.0
+    elif cloud >= 40:
+        ceiling_m = 1000.0
+    else:
+        ceiling_m = 2000.0
+    return (visibility_km, ceiling_m)
+
+
+@router.get("/flight-category")
+async def get_flight_category_endpoint(
+    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+    api_key: str = Depends(require_api_key),
+):
+    """
+    Categoría de vuelo OMM/OHMC (VFR/MVFR/IFR/LIFR) para lat/lon.
+    Deriva visibilidad y techo heurísticamente desde tiempo actual (M3.2).
+    """
+    try:
+        engine = UnifiedWeatherEngine()
+        unified = engine.get_current_unified(latitude=lat, longitude=lon)
+        if unified is None:
+            raise HTTPException(
+                status_code=503,
+                detail="No se pudieron obtener datos meteorológicos.",
+            )
+        visibility_km, ceiling_m = _derive_visibility_ceiling_from_forecast(unified)
+        category = get_flight_category(visibility_km, ceiling_m)
+        return {
+            "location": {"lat": lat, "lon": lon},
+            "category": category,
+            "visibility_km": round(visibility_km, 1),
+            "ceiling_m": ceiling_m,
+            "authentication": "protected",
+            "api_key_valid": True,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error getting flight category: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to get flight category")

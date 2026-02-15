@@ -457,3 +457,57 @@ class TestUnifiedWeatherEngine:
         assert isinstance(comparison, dict)
         # Debería tener datos de al menos una fuente
         assert len(comparison) > 0
+
+    def test_fetch_all_sources_wrf_fails_windy_succeeds_fallback_gfs(
+        self, unified_engine: UnifiedWeatherEngine
+    ):
+        """
+        M1.4: Cuando WRF falla, Windy (GFS) sigue aportando datos.
+        Valida fallback a GFS si WRF lanza excepción.
+        """
+        from app.data.repositories.base_repository import WeatherData
+
+        base_time = datetime.now(UTC)
+        windy_data = [
+            WeatherData(
+                source="windy_gfs",
+                timestamp=base_time + timedelta(hours=i),
+                latitude=-31.42,
+                longitude=-64.19,
+                temperature=280 + i,
+                wind_speed=5 + i,
+                wind_direction=180,
+                precipitation=0.1 * i,
+                cloud_cover=10 + i,
+            )
+            for i in range(6)
+        ]
+
+        mock_windy_repo = Mock()
+        mock_windy_repo.get_forecast.return_value = windy_data
+
+        mock_wrf_repo = Mock()
+        mock_wrf_repo.get_forecast.side_effect = Exception("WRF S3/NetCDF no disponible")
+
+        def get_repo_side_effect(source):
+            if source == "windy_gfs":
+                return mock_windy_repo
+            if source == "wrf_smn":
+                return mock_wrf_repo
+            return None
+
+        unified_engine.repository_factory.get_repository.side_effect = get_repo_side_effect
+
+        all_data = unified_engine._fetch_all_sources(
+            latitude=-31.42,
+            longitude=-64.19,
+            hours=6,
+            sources=["windy_gfs", "wrf_smn"],
+        )
+
+        assert isinstance(all_data, list)
+        assert len(all_data) > 0, "Debe haber datos de Windy (fallback GFS) aunque WRF falle"
+        sources_in_data = {d.source for d in all_data}
+        assert WeatherSource.WINDY_GFS in sources_in_data or any(
+            "windy" in str(s).lower() for s in sources_in_data
+        )

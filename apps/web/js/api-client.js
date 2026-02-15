@@ -144,6 +144,13 @@ class SkyPulseAPI {
     async getPatternTypes() {
         return this.request('/api/v1/patterns/types');
     }
+
+    /**
+     * Obtiene categoría de vuelo OMM/OHMC (VFR/MVFR/IFR/LIFR) para lat/lon (M3.2).
+     */
+    async getFlightCategory(lat, lon) {
+        return this.request(`/api/v1/weather/flight-category?lat=${lat}&lon=${lon}`);
+    }
 }
 
 // Exportar para uso global

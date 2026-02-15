@@ -106,16 +106,18 @@ async def get_alerts(
         max_level = 0
 
         for alert in alerts:
+            # OperationalAlert no tiene title ni confidence; se derivan para AlertResponse
+            title = f"{alert.level_name}: {alert.phenomenon}"
             alert_responses.append(
                 AlertResponse(
                     level=alert.level,
                     level_name=alert.level_name,
                     phenomenon=alert.phenomenon,
-                    title=alert.title,
+                    title=title,
                     description=alert.description,
                     time_window=alert.time_window,
                     recommendations=[alert.recommendation] if alert.recommendation else [],
-                    confidence=alert.confidence,
+                    confidence=1.0,
                 )
             )
 

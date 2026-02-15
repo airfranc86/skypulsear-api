@@ -106,6 +106,29 @@ app.include_router(alerts.router, prefix="/api/v1", tags=["Alerts"])
 app.include_router(patterns.router, prefix="/api/v1", tags=["Patterns"])
 
 
+@app.on_event("startup")
+async def startup_risk_agents() -> None:
+    """Si RISK_AGENTS_ENABLED=true, lanza hilo en background que ejecuta Risk Agents cada 60s."""
+    import threading
+    import time
+
+    from app.services.risk_agents import is_risk_agents_enabled, run_risk_agents_safe
+
+    if not is_risk_agents_enabled():
+        return
+
+    def _loop() -> None:
+        while True:
+            try:
+                run_risk_agents_safe()
+            except Exception:
+                pass
+            time.sleep(60)
+
+    thread = threading.Thread(target=_loop, daemon=True)
+    thread.start()
+
+
 @app.get("/")
 async def root() -> dict[str, str]:
     """Endpoint raíz con información de la API."""

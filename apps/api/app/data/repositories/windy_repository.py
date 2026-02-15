@@ -11,6 +11,7 @@ from requests.exceptions import ConnectionError, Timeout, RequestException
 from app.data.repositories.base_repository import IWeatherRepository
 from app.models.weather_data import WeatherData
 from app.utils.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
+from app.utils.circuit_breaker_registry import register_circuit_breaker
 from app.utils.exceptions import WeatherAPIError
 from app.utils.logging_config import get_logger
 from app.utils.constants import HTTP_TIMEOUT
@@ -98,6 +99,9 @@ class WindyRepository(IWeatherRepository):
             record_circuit_breaker_state("windy_api", "closed")
         except ImportError:
             pass
+
+        # Registrar para Risk Agent Operational Failure (lee estado sin bloquear API)
+        register_circuit_breaker("windy_api", self.circuit_breaker)
 
         logger.info(
             "WindyRepository inicializado",

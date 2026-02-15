@@ -53,6 +53,23 @@ source_request_duration = Histogram(
     buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
 )
 
+# Métricas Risk Agents (skypulse_risk_agent_*)
+risk_agent_circuit_open = Gauge(
+    "skypulse_risk_agent_circuit_open",
+    "1 si el circuit breaker está abierto, 0 si está cerrado o half_open",
+    ["circuit_name"],
+)
+
+risk_agent_data_integrity_ok = Gauge(
+    "skypulse_risk_agent_data_integrity_ok",
+    "1 si datos recientes son completos y coherentes, 0 si hay problemas de integridad",
+)
+
+risk_agent_model_drift_confidence = Gauge(
+    "skypulse_risk_agent_model_drift_confidence",
+    "Confianza/skill del modelo (0-1); sin observación no se actualiza",
+)
+
 # Métricas de cache
 cache_hits = Counter(
     "cache_hits_total",
@@ -181,3 +198,14 @@ def record_cache_miss(cache_type: str) -> None:
         cache_type: Tipo de cache (ej: "weather_current", "weather_forecast")
     """
     cache_misses.labels(cache_type=cache_type).inc()
+
+
+def record_risk_agent_circuit_open(circuit_name: str, is_open: bool) -> None:
+    """
+    Registrar estado de circuit breaker para Risk Agent (1=abierto, 0=cerrado/half_open).
+
+    Args:
+        circuit_name: Nombre del circuit (ej: "windy_api")
+        is_open: True si está open, False si closed o half_open
+    """
+    risk_agent_circuit_open.labels(circuit_name=circuit_name).set(1 if is_open else 0)

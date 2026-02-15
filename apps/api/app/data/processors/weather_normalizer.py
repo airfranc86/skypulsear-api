@@ -54,7 +54,7 @@ class WeatherNormalizerService:
             # SIEMPRE convertir si > 100 (definitivamente Kelvin)
             if temp_raw > 100:
                 temp_celsius = temp_raw - 273.15
-                logger.info(f"🌡️ K->°C: {temp_raw:.1f}K = {temp_celsius:.1f}°C")
+                logger.debug("K->°C: %.1fK = %.1f°C", temp_raw, temp_celsius)
             else:
                 temp_celsius = temp_raw
             

@@ -4,7 +4,7 @@ Frontend estático del sistema meteorológico SkyPulse: dashboard, páginas info
 
 **Última actualización:** 2026-02-15  
 
-**Auditoría de consistencia:** 2026-02-15 — Conversión m/s → km/h para viento; uso de `wind_direction_deg` cuando la API lo envía; risk sub-scores en 0–5 desde backend. Ver `docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md`.
+**Auditoría de consistencia:** 2026-02-15 — Conversión m/s → km/h para viento; uso de `wind_direction_deg` cuando la API lo envía; risk sub-scores en 0–5 desde backend. Ver `.cursor/Docs/AUDITORIA-CONSISTENCIA-FRONTEND-BACKEND.md`.
 
 ---
 
@@ -65,12 +65,14 @@ La ubicación seleccionada se persiste en `localStorage` (`skypulse_location`). 
 2. Si falla (401, timeout, etc.), se usa **Open-Meteo** (API gratuita, sin API key) como fallback.
 3. Si también falla, se muestran datos de ejemplo.
 
+La API puede exponer métricas de **Risk Evaluation Agents** en `GET /api/v1/metrics` cuando `RISK_AGENTS_ENABLED=true` (ver [README del backend](../api/README.md#risk-evaluation-agents-opcional)).
+
 ### Mapeo y unidades (consistencia con la API)
 
 - **Viento:** La API devuelve **`wind_speed_kmh`** en current y en cada ítem de forecast; el dashboard usa esos valores en todo el sistema (métricas, riesgo, timeline). Si la API no envía `wind_speed_kmh`, se usa `wind_speed` (m/s) × 3.6. Open-Meteo (fallback) se convierte localmente a km/h.
 - **Dirección del viento:** Se usa `wind_direction_10m` en grados (0–360) si la API envía `wind_direction_deg`; si no, se usa el cardinal (`wind_direction`, ej. "S"). La etiqueta y el color por dirección son coherentes cuando el backend envía grados.
 - **Risk:** El backend devuelve `score` (0–5) y sub-scores en 0–5. El frontend multiplica los sub-scores por 20 para las barras 0–100.
-- **Campos de current:** Se normalizan a `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m`, `wind_direction_10m`, `precipitation`, `cloud_cover`, `weather_code`, `surface_pressure`, `time` según contrato en [AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md](../../docs/AUDITORIA_CONSISTENCIA_FRONTEND_BACKEND.md).
+- **Campos de current:** Se normalizan a `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m`, `wind_direction_10m`, `precipitation`, `cloud_cover`, `weather_code`, `surface_pressure`, `time` según contrato en [AUDITORIA-CONSISTENCIA-FRONTEND-BACKEND.md](../../.cursor/Docs/AUDITORIA-CONSISTENCIA-FRONTEND-BACKEND.md).
 
 ---
 

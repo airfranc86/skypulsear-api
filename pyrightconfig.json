@@ -1,0 +1,4 @@
+{
+  "include": ["apps/api", "tests"],
+  "extraPaths": ["apps/api"]
+}

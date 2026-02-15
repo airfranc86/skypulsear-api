@@ -85,7 +85,8 @@ class TestRiskScoringService:
         )
         
         assert isinstance(risk_score, RiskScore)
-        assert risk_score.profile == UserProfile.PILOT
+        # Un solo perfil: siempre GENERAL (ignorado el pasado por parámetro)
+        assert risk_score.profile == UserProfile.GENERAL
         assert 0 <= risk_score.score <= 5
         # category es un string, no un enum
         assert isinstance(risk_score.category, str)
@@ -96,7 +97,7 @@ class TestRiskScoringService:
         sample_forecasts: list[UnifiedForecast],
         sample_patterns: list[DetectedPattern],
     ):
-        """Test cálculo de risk score para perfil agricultor."""
+        """Test cálculo de risk score (perfil siempre GENERAL)."""
         from app.services.alert_service import AlertService
         alert_service = AlertService()
         alerts = alert_service.generate_alerts(sample_patterns, sample_forecasts)
@@ -109,7 +110,7 @@ class TestRiskScoringService:
         )
         
         assert isinstance(risk_score, RiskScore)
-        assert risk_score.profile == UserProfile.FARMER
+        assert risk_score.profile == UserProfile.GENERAL
         assert 0 <= risk_score.score <= 5
 
     def test_risk_score_structure(
@@ -218,8 +219,8 @@ class TestRiskScoringService:
                 patterns=sample_patterns,
                 alerts=alerts,
             )
-            
-            assert risk_score.profile == profile
+            # Un solo perfil: siempre GENERAL
+            assert risk_score.profile == UserProfile.GENERAL
             assert 0 <= risk_score.score <= 5
 
     def test_risk_score_high_wind(
@@ -250,7 +251,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts([], high_wind_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.PILOT,
+            profile=UserProfile.GENERAL,
             forecasts=high_wind_forecasts,
             patterns=[],
             alerts=alerts,
@@ -286,7 +287,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts([], high_temp_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.OUTDOOR_SPORTS,
+            profile=UserProfile.GENERAL,
             forecasts=high_temp_forecasts,
             patterns=[],
             alerts=alerts,
@@ -339,7 +340,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts([], high_precip_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.OUTDOOR_EVENT,
+            profile=UserProfile.GENERAL,
             forecasts=high_precip_forecasts,
             patterns=[],
             alerts=alerts,
@@ -369,7 +370,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts([storm_pattern], sample_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.PILOT,
+            profile=UserProfile.GENERAL,
             forecasts=sample_forecasts,
             patterns=[storm_pattern],
             alerts=alerts,
@@ -406,7 +407,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts([], extreme_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.PILOT,
+            profile=UserProfile.GENERAL,
             forecasts=extreme_forecasts,
             patterns=[],
             alerts=alerts,
@@ -517,7 +518,7 @@ class TestRiskScoringService:
         alerts = alert_service.generate_alerts(patterns, sample_forecasts)
         
         risk_score = risk_service.calculate_risk(
-            profile=UserProfile.FARMER,
+            profile=UserProfile.GENERAL,
             forecasts=sample_forecasts,
             patterns=patterns,
             alerts=alerts,
@@ -577,7 +578,7 @@ class TestRiskScoringService:
             forecasts_with_apparent.append(mock_forecast)
         
         risk, apparent_temp = risk_service._calculate_temperature_risk(
-            profile=UserProfile.OUTDOOR_SPORTS,
+            profile=UserProfile.GENERAL,
             forecasts=forecasts_with_apparent
         )
         
@@ -608,7 +609,7 @@ class TestRiskScoringService:
         ]
         
         risk, apparent_temp = risk_service._calculate_temperature_risk(
-            profile=UserProfile.FARMER,
+            profile=UserProfile.GENERAL,
             forecasts=cold_forecasts
         )
         
@@ -638,9 +639,45 @@ class TestRiskScoringService:
         ]
         
         risk, apparent_temp = risk_service._calculate_temperature_risk(
-            profile=UserProfile.FARMER,
+            profile=UserProfile.GENERAL,
             forecasts=extreme_cold_forecasts
         )
         
         assert isinstance(risk, (int, float))
         assert risk >= 90, "Frío extremo debería generar riesgo >= 90"
+
+    def test_storm_and_hail_risk_with_weather_code(
+        self, risk_service: RiskScoringService
+    ):
+        """Test que weather_code WMO 95/99 activa storm_risk y hail_risk."""
+        from app.services.alert_service import AlertService
+        base_time = datetime.now(UTC)
+        # Pronósticos con código de tormenta severa (99) y granizo
+        storm_forecasts = [
+            UnifiedForecast(
+                timestamp=base_time + timedelta(hours=i),
+                forecast_hour=i,
+                latitude=-31.4201,
+                longitude=-64.1888,
+                temperature_celsius=22.0,
+                humidity_pct=70.0,
+                wind_speed_ms=8.0,
+                wind_direction_deg=180.0,
+                pressure_hpa=1010.0,
+                precipitation_mm=10.0,
+                cloud_cover_pct=80.0,
+                overall_confidence=0.85,
+                weather_code=99,  # Tormenta severa con granizo
+            )
+            for i in range(6)
+        ]
+        alert_service = AlertService()
+        alerts = alert_service.generate_alerts([], storm_forecasts)
+        risk_score = risk_service.calculate_risk(
+            profile=UserProfile.GENERAL,
+            forecasts=storm_forecasts,
+            patterns=[],
+            alerts=alerts,
+        )
+        assert risk_score.storm_risk > 0, "weather_code 99 debería activar storm_risk"
+        assert risk_score.hail_risk > 0, "weather_code 99 debería activar hail_risk"

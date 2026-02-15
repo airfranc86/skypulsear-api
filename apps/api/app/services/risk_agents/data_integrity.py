@@ -27,14 +27,15 @@ class DataIntegrityRiskAgent(BaseRiskAgent):
     def evaluate(self) -> dict[str, Any]:
         """
         Evalúa integridad; por ahora sin fuente de datos, marca 1 (ok).
-        Futuro: comprobar completitud/latencia de datos ya obtenidos; solo entonces set(0).
+        Futuro: comprobar completitud/latencia; solo entonces set(0).
         """
+        # Marcar ok al inicio para que la métrica sea 1 en cuanto el agente corre
+        risk_agent_data_integrity_ok.set(1)
         result: dict[str, Any] = {"agent": self.name, "completeness_ok": True}
         try:
-            # Sin lógica de comprobación aún; solo exponer métrica (1 = ok)
-            risk_agent_data_integrity_ok.set(1)
+            # Sin lógica de comprobación aún; 0 solo cuando detectemos problema real
+            pass
         except Exception as e:
             logger.warning("DataIntegrityRiskAgent: %s", e, exc_info=True)
             result["error"] = str(e)
-            # No set(0) en excepción: 0 solo cuando detectemos problema de integridad real
         return result

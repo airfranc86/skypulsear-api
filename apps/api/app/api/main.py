@@ -115,8 +115,10 @@ async def startup_risk_agents() -> None:
     from app.services.risk_agents import is_risk_agents_enabled, run_risk_agents_safe
 
     if not is_risk_agents_enabled():
+        print("[Config] Risk Agents disabled (RISK_AGENTS_ENABLED no es true)")
         return
 
+    print("[Config] Risk Agents enabled; ejecutando cada 60s en background")
     def _loop() -> None:
         while True:
             try:

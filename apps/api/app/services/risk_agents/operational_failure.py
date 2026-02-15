@@ -25,19 +25,25 @@ class OperationalFailureRiskAgent(BaseRiskAgent):
     def __init__(self) -> None:
         super().__init__("operational_failure")
 
+    # Circuit conocido: se reporta aunque aún no esté registrado (p. ej. sin llamar a weather)
+    KNOWN_CIRCUITS = ("windy_api",)
+
     def evaluate(self) -> dict[str, Any]:
         """
         Lee estados de circuit breakers registrados y expone métricas.
-
-        Returns:
-            Dict con circuit_name -> state (closed|open|half_open).
+        Si ningún circuit está registrado aún, reporta KNOWN_CIRCUITS como cerrado (0).
         """
         result: dict[str, Any] = {"agent": self.name, "circuits": {}}
         try:
-            for circuit_name, state in get_circuit_states():
+            states = get_circuit_states()
+            for circuit_name, state in states:
                 is_open = state == "open"
                 record_risk_agent_circuit_open(circuit_name, is_open)
                 result["circuits"][circuit_name] = state
+            # Si el registro está vacío (nadie ha usado weather aún), exponer windy_api como 0
+            if not states:
+                for name in self.KNOWN_CIRCUITS:
+                    record_risk_agent_circuit_open(name, False)
         except Exception as e:
             logger.warning("OperationalFailureRiskAgent: %s", e, exc_info=True)
             result["error"] = str(e)

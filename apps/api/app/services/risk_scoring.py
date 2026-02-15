@@ -246,6 +246,9 @@ class RiskScoringService:
         Returns:
             RiskScore con score 0-100 y detalles
         """
+        # Un solo perfil soportado: GENERAL (ignorar profile pasado por compatibilidad)
+        profile = UserProfile.GENERAL
+
         # Filtrar pronósticos por ventana temporal
         relevant_forecasts = [f for f in forecasts if f.forecast_hour <= hours_ahead]
 
@@ -319,8 +322,9 @@ class RiskScoringService:
             apparent_temperature=apparent_temp,
             main_risk_factors=risk_factors,
             recommendation=recommendation,
-            action_required=category
-            in [RiskCategory.VERY_HIGH, RiskCategory.EXTREME],  # Niveles 3-4
+            action_required=(
+                category in [RiskCategory.VERY_HIGH, RiskCategory.EXTREME]
+            ),
             valid_for_hours=hours_ahead,
         )
 

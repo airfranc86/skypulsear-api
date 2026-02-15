@@ -104,6 +104,13 @@ class WeatherFusionProcessor:
         # Obtener fuentes utilizadas
         sources_used = list(set(dp.source for dp in data_points))
 
+        # Código WMO: usar el más severo entre fuentes (95/96/99 tormentas, 77 granizo)
+        weather_codes = [
+            dp.weather_code for dp in data_points
+            if getattr(dp, "weather_code", None) is not None
+        ]
+        weather_code = max(weather_codes) if weather_codes else None
+
         return UnifiedForecast(
             timestamp=timestamp,
             forecast_hour=forecast_hour,
@@ -116,6 +123,7 @@ class WeatherFusionProcessor:
             cloud_cover_pct=cloud_cover,
             humidity_pct=humidity,
             pressure_hpa=pressure,
+            weather_code=weather_code,
             temperature_confidence=temp_result["confidence"],
             wind_confidence=wind_result["confidence"],
             precipitation_confidence=precip_result["confidence"],

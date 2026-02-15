@@ -52,6 +52,8 @@ class NormalizedWeatherData(BaseModel):
     cloud_cover_pct: Optional[float] = Field(default=None, ge=0, le=100)
     humidity_pct: Optional[float] = Field(default=None, ge=0, le=100)
     pressure_hpa: Optional[float] = Field(default=None, ge=800, le=1100)
+    # Código WMO (0-99) para condiciones/severidad; p. ej. 95/96/99 tormentas, 77 granizo
+    weather_code: Optional[int] = Field(default=None, ge=0, le=99)
 
     # Metadatos
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -192,6 +194,8 @@ class UnifiedForecast(BaseModel):
     cloud_cover_pct: Optional[float] = None
     humidity_pct: Optional[float] = None
     pressure_hpa: Optional[float] = None
+    # Código WMO (0-99) para tormentas/granizo; p. ej. 95, 96, 99, 77
+    weather_code: Optional[int] = Field(default=None, ge=0, le=99)
 
     # Confianza por variable (0-1)
     temperature_confidence: float = Field(default=0.5, ge=0, le=1)

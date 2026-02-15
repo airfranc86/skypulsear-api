@@ -216,10 +216,40 @@ Comprueba: tipos y rangos de `/current`, ítems de `/forecast`, y que los sub-sc
 
 ---
 
-## 6. Resumen de cambios ya realizados (referencia)
+## 6. Contrato de risk y causas de factores en 0
+
+### 6.1 Un solo perfil
+
+- El backend expone **un único perfil de riesgo: general**. El campo `profile` en el body de POST `/risk-score` es opcional (default `"general"`) y se ignora; siempre se usa `UserProfile.GENERAL`.
+- El frontend no envía selector de perfil; usa perfil fijo `'general'` en las llamadas a la API.
+
+### 6.2 Escala de sub-scores
+
+- **Servicio interno:** `RiskScoringService` calcula sub-scores en escala **0–100** (temperature_risk, wind_risk, precipitation_risk, storm_risk, hail_risk, pattern_risk).
+- **API:** El router convierte a **0–5** antes de enviar: `to_api_scale(val) = round(val / 20, 1)`. La respuesta cumple `ge=0, le=5` para cada sub-score.
+- **Frontend:** Recibe 0–5 y multiplica por 20 para las barras (0–100 %). No debe recibir valores > 5.
+
+### 6.3 Por qué algunos factores pueden ser 0
+
+| Factor | Causa típica de valor 0 |
+|--------|-------------------------|
+| **temperature_risk** | Temperatura dentro del rango óptimo del perfil (p. ej. 15–30 °C para GENERAL). |
+| **wind_risk** | `wind_speed_ms` por debajo del umbral "moderate" (p. ej. 10 m/s para GENERAL). Con vientos bajos es esperable 0 %. |
+| **precipitation_risk** | `precipitation_mm` nulo o 0 en la ventana evaluada. |
+| **storm_risk** | Sin `weather_code` WMO de tormenta (95, 96, 99) en los pronósticos; y/o sin indicadores WRF (precip + humedad alta). Si las fuentes no aportan `weather_code`, el riesgo de rayos solo puede activarse por lógica WRF o patrones. |
+| **hail_risk** | Sin `weather_code` de granizo (77, 96, 99) en los pronósticos. Misma limitación que storm si no hay weather_code en UnifiedForecast. |
+
+**Unidades de entrada al servicio:** `wind_speed_ms` (m/s), `precipitation_mm` (mm), `temperature_celsius` (°C). Opcional: `weather_code` (WMO 0–99) en `UnifiedForecast` para activar storm/hail cuando las fuentes lo provean.
+
+---
+
+## 7. Resumen de cambios ya realizados (referencia)
 
 - **Viento:** Backend: dirección en convención meteorológica “desde dónde sopla” (Windy + WRF-SMN). Frontend: conversión m/s → km/h (× 3.6) al construir `current` y `hourly` desde backend y Open-Meteo; riesgo de viento y display en km/h coherentes.
 - **Fuente de datos:** API expone `meteo_source_display`; frontend muestra etiqueta “camuflada” (sin guiones bajos).
 - **Dirección en UI:** `getWindDirectionLabel` acepta grados (número) o cardinal (string); si la API envía solo cardinal, la etiqueta es correcta y el color usa valor por defecto.
+- **Risk: un solo perfil.** Selector de perfil eliminado en el frontend; backend usa siempre perfil general. Campo `profile` en POST `/risk-score` opcional e ignorado.
+- **Risk: sub-scores 0–5 en API.** El router convierte sub-scores del servicio (0–100) a 0–5 (÷20) antes de enviar; el frontend multiplica por 20 para las barras.
+- **Risk: weather_code.** Añadido `weather_code` opcional a `UnifiedForecast` y `NormalizedWeatherData`; la fusión propaga el código más severo entre fuentes. Permite que storm_risk y hail_risk sean no cero cuando las fuentes aporten códigos WMO (95, 96, 99, 77).
 
 Este documento debe actualizarse cuando se amplíe el contrato de `/current`, se unifique la escala de risk o se añadan nuevos endpoints consumidos por el dashboard.

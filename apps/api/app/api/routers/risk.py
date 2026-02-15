@@ -1,5 +1,5 @@
 """
-Router de cálculo de riesgo por perfil.
+Router de cálculo de riesgo. Un solo perfil (general); el campo profile está deprecado.
 """
 
 from typing import Optional
@@ -27,7 +27,10 @@ class RiskScoreRequest(BaseModel):
 
     lat: float = Field(..., ge=-90, le=90, description="Latitud")
     lon: float = Field(..., ge=-180, le=180, description="Longitud")
-    profile: str = Field(..., description="Tipo de perfil (piloto, agricultor, etc.)")
+    profile: str = Field(
+        "general",
+        description="Ignorado: se usa siempre perfil general. Mantenido por compatibilidad.",
+    )
     hours_ahead: int = Field(6, ge=1, le=72, description="Horas a evaluar")
 
 
@@ -59,44 +62,18 @@ async def calculate_risk_score(
     api_key: str = Depends(require_api_key),
 ) -> RiskScoreResponse:
     """
-    Calcula el risk score para un perfil específico.
+    Calcula el risk score (un solo perfil: general).
 
     Integra:
-    - UnifiedWeatherEngine: Obtiene pronóstico fusionado
-    - PatternDetector: Detecta patrones meteorológicos
-    - AlertService: Genera alertas operativas
-    - RiskScoringService: Calcula score personalizado por perfil
-
-    Perfiles disponibles:
-    - piloto: Aviación general
-    - agricultor: Agricultura y ganadería
-    - camionero: Transporte terrestre
-    - deporte_aire_libre: Deportes al aire libre
-    - evento_exterior: Eventos al aire libre
-    - construccion: Construcción
-    - turismo: Turismo / Excursión
-    - general: General
+    - UnifiedWeatherEngine: pronóstico fusionado
+    - PatternDetector: patrones meteorológicos
+    - AlertService: alertas operativas
+    - RiskScoringService: score de riesgo
     """
 
     try:
-        # Mapear string a UserProfile
-        profile_map = {
-            "piloto": UserProfile.PILOT,
-            "agricultor": UserProfile.FARMER,
-            "camionero": UserProfile.TRUCKER,
-            "deporte_aire_libre": UserProfile.OUTDOOR_SPORTS,
-            "evento_exterior": UserProfile.OUTDOOR_EVENT,
-            "construccion": UserProfile.CONSTRUCTION,
-            "turismo": UserProfile.TOURISM,
-            "general": UserProfile.GENERAL,
-        }
-
-        profile = profile_map.get(request.profile.lower())
-        if not profile:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Perfil no válido. Opciones: {list(profile_map.keys())}",
-            )
+        # Un solo perfil: siempre GENERAL (campo profile en request ignorado)
+        profile = UserProfile.GENERAL
 
         correlation_id = getattr(http_request.state, "correlation_id", None)
 

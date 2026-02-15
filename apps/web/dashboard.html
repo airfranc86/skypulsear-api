@@ -1868,122 +1868,6 @@
             color: var(--light-text);
         }
 
-        /* ============ PROFILE SELECTOR ============ */
-        .profile-selector {
-            margin-bottom: var(--space-4);
-        }
-
-        .profile-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: var(--space-2);
-        }
-
-        @media (min-width: 768px) {
-            .profile-grid {
-                grid-template-columns: repeat(6, 1fr);
-            }
-        }
-
-        .profile-btn {
-            min-height: 48px;
-            padding: var(--space-2) var(--space-1);
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-md);
-            color: var(--gray-300);
-            font-size: 0.7rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body.light .profile-btn {
-            background: rgba(0, 27, 60, 0.02);
-            border: 1px solid var(--light-border);
-            color: var(--light-text);
-        }
-
-        .profile-btn:focus,
-        .profile-btn:focus-visible {
-            outline: 2px solid var(--windy-cyan);
-            outline-offset: 2px;
-        }
-
-        .profile-btn:active {
-            transform: scale(0.95);
-        }
-
-        @media (min-width: 768px) {
-            .profile-btn {
-                min-height: 56px;
-                padding: var(--space-3);
-                font-size: 0.75rem;
-                gap: var(--space-1);
-            }
-        }
-
-        .profile-btn:hover {
-            background: rgba(0, 209, 255, 0.1);
-            border-color: rgba(0, 209, 255, 0.3);
-            color: var(--windy-cyan);
-        }
-
-        body.light .profile-btn:hover {
-            background: rgba(0, 27, 60, 0.1);
-            border-color: rgba(0, 27, 60, 0.2);
-            color: var(--windy-deep-blue);
-        }
-
-        .profile-btn.active {
-            background: rgba(0, 209, 255, 0.15);
-            border-color: var(--windy-cyan);
-            color: var(--windy-cyan);
-        }
-
-        body.light .profile-btn.active {
-            background: rgba(0, 27, 60, 0.15);
-            border-color: var(--windy-deep-blue);
-            color: var(--windy-deep-blue);
-        }
-
-        .profile-btn .icon {
-            font-size: 1rem;
-        }
-
-
-        .profile-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            transition: all 0.2s ease;
-        }
-
-        .profile-btn.active svg {
-            stroke: var(--windy-cyan);
-        }
-
-        body.light .profile-btn.active svg {
-            stroke: var(--windy-deep-blue);
-        }
-
-        @media (min-width: 768px) {
-            .profile-btn .icon {
-                font-size: 1.25rem;
-            }
-
-            .profile-btn svg {
-                width: 24px;
-                height: 24px;
-            }
-        }
-
         /* ============ WEATHER METRICS ============ */
         .metrics-grid {
             display: grid;
@@ -3528,10 +3412,6 @@
                 grid-template-columns: repeat(3, 1fr);
             }
 
-            .profile-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
             .sidebar {
                 position: relative;
                 top: unset;
@@ -3590,10 +3470,6 @@
         }
 
         @media (max-width: 768px) {
-            .profile-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-
             .metrics-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -3698,21 +3574,6 @@
             .header {
                 padding: var(--space-3) var(--space-4);
                 padding-top: max(var(--space-3), env(safe-area-inset-top));
-            }
-
-            .profile-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: var(--space-2);
-            }
-
-            .profile-btn {
-                min-height: 52px;
-                padding: var(--space-2);
-                font-size: 0.65rem;
-            }
-
-            .profile-btn .icon {
-                font-size: 1.1rem;
             }
 
             .metric-card {
@@ -4208,31 +4069,10 @@
             return Math.floor((Date.now() - dashboardCache.timestamp) / 60000);
         };
 
-        // ============ ICONOS SVG PROFESIONALES ============
-        const PROFILE_ICONS = {
-            pilot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>',
-            trucker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
-            farmer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3c0 1.5 1 2.5 1 4H8c-1.5 0-3 1-3 3v2h14v-2c0-2-1.5-3-3-3h-2c0-1.5 1-2.5 1-4a3 3 0 0 0-3-3z"/><path d="M5 14v8h14v-8"/><path d="M9 18h6"/></svg>',
-            outdoor_sports: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="17" cy="4" r="2"/><path d="m15 21-3-3-3 3"/><path d="m21 15-3-3-4 1-3-4-3 1"/><path d="m3 21 3-9 4 1"/></svg>',
-            outdoor_event: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 3v4"/><path d="M15 3v4"/></svg>',
-            construction: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20h20"/><path d="M5 20v-6l7-7 7 7v6"/><path d="M9 20v-4h6v4"/><rect x="6" y="2" width="12" height="4" rx="1"/></svg>',
-            tourism: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>',
-            general: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>'
-        };
+        // Un solo perfil: general (selector de perfil eliminado)
+        const PROFILE_FIXED = 'general';
+        const GENERAL_WEIGHTS = { temp: 0.25, wind: 0.25, precip: 0.25, pattern: 0.25 };
 
-        // ============ PERFILES DE USUARIO ============
-        const PROFILES = {
-            general: { name: 'General', icon: PROFILE_ICONS.general, weights: { temp: 0.25, wind: 0.25, precip: 0.25, pattern: 0.25 } },
-            trucker: { name: 'Camionero', icon: PROFILE_ICONS.trucker, weights: { temp: 0.15, wind: 0.3, precip: 0.35, pattern: 0.2 } },
-            farmer: { name: 'Agricultor', icon: PROFILE_ICONS.farmer, weights: { temp: 0.3, wind: 0.15, precip: 0.3, pattern: 0.25 } },
-            outdoor_sports: { name: 'Deporte', icon: PROFILE_ICONS.outdoor_sports, weights: { temp: 0.3, wind: 0.25, precip: 0.3, pattern: 0.15 } },
-            outdoor_event: { name: 'Evento', icon: PROFILE_ICONS.outdoor_event, weights: { temp: 0.2, wind: 0.25, precip: 0.35, pattern: 0.2 } },
-            construction: { name: 'Construcción', icon: PROFILE_ICONS.construction, weights: { temp: 0.2, wind: 0.35, precip: 0.25, pattern: 0.2 } },
-            tourism: { name: 'Turismo', icon: PROFILE_ICONS.tourism, weights: { temp: 0.15, wind: 0.15, precip: 0.25, pattern: 0.45 } },
-            pilot: { name: 'Aviación', icon: PROFILE_ICONS.pilot, weights: { temp: 0.1, wind: 0.4, precip: 0.25, pattern: 0.25 }, link: 'aviacion-demo.html' }
-        };
-
-        let currentProfile = 'general';
         let weatherData = null;
 
         // ============ UTILIDADES ============
@@ -4807,10 +4647,10 @@
             return 0;
         };
 
-        const calculateRisks = (data, profile) => {
+        const calculateRisks = (data) => {
             const current = data.current;
             const hourly = data.hourly;
-            const weights = PROFILES[profile].weights;
+            const weights = GENERAL_WEIGHTS;
 
             // Riesgo por temperatura (usa sensación térmica si es mayor)
             const realTemp = current.temperature_2m;
@@ -5642,18 +5482,16 @@
         };
 
         // ============ RECOMENDACIONES ============
-        const getRecommendation = (profile, category, risks) => {
-            const profileData = PROFILES[profile];
-
+        const getRecommendation = (category, risks) => {
             if (category.class === 'very-low') {
-                return `Condiciones favorables para ${profileData.name.toLowerCase()}. Disfrute su actividad.`;
+                return 'Condiciones favorables. Disfrute su actividad.';
             }
 
             if (category.class === 'low') {
-                return `Condiciones aceptables. Monitoree actualizaciones meteorológicas.`;
+                return 'Condiciones aceptables. Monitoree actualizaciones meteorológicas.';
             }
 
-            let factors = [];
+            const factors = [];
             if (risks.tempRisk > 30) factors.push('temperatura');
             if (risks.windRisk > 30) factors.push('viento');
             if (risks.precipRisk > 30) factors.push('precipitación');
@@ -5662,22 +5500,11 @@
 
             const factorsText = factors.length > 0 ? factors.join(', ') : 'condiciones meteorológicas';
 
-            const specifics = {
-                pilot: 'Verificar METAR/TAF. Descargas en 10km = alerta roja.',
-                farmer: 'Evaluar tareas a campo.',
-                outdoor_sports: 'Considerar rutas alternativas o postergar actividad.',
-                outdoor: 'Tener plan B disponible.',
-                trucker: 'Evaluar postergar viaje o ruta alternativa.',
-                construction: 'Suspender trabajos en altura.',
-                tourism: 'Riesgo de descargas eléctricas. Buscar refugio seguro.',
-                general: 'Evaluar necesidad de salir.'
-            };
-
             if (category.class === 'extreme' || category.class === 'very-high') {
                 return `Riesgo ${category.name.toLowerCase()}. Evitar actividad al aire libre. Priorizar seguridad.`;
             }
 
-            return `Precaución por ${factorsText}. ${specifics[profile] || specifics.general}`;
+            return `Precaución por ${factorsText}. Evaluar necesidad de salir.`;
         };
 
         // ============ WEATHER ICON ============
@@ -5727,7 +5554,7 @@
          * Intenta obtener el risk score del backend.
          * Retorna null si el backend no está disponible o falla.
          */
-        const fetchRiskScoreFromBackend = async (profile, hoursAhead = 6) => {
+        const fetchRiskScoreFromBackend = async (hoursAhead = 6) => {
             try {
                 if (!api) {
                     console.log('[Backend] API client no inicializado, usando fallback local');
@@ -5735,9 +5562,9 @@
                 }
 
                 const { lat, lon } = CONFIG.location;
-                console.log(`[Backend] Obteniendo risk score para ${profile} en (${lat}, ${lon})`);
+                console.log(`[Backend] Obteniendo risk score (perfil general) en (${lat}, ${lon})`);
 
-                const response = await api.calculateRiskScore(lat, lon, profile, hoursAhead);
+                const response = await api.calculateRiskScore(lat, lon, PROFILE_FIXED, hoursAhead);
 
                 // Mapear respuesta del backend al formato del frontend
                 // Backend retorna scores en escala 0-5, frontend espera 0-100 para barras
@@ -5784,18 +5611,16 @@
 
                 // Intentar usar score del backend si está disponible
                 if (api && CONFIG.backendUrl) {
-                    const backendRiskScore = await fetchRiskScoreFromBackend(currentProfile, 6);
+                    const backendRiskScore = await fetchRiskScoreFromBackend(6);
                     if (backendRiskScore) {
                         risks = backendRiskScore;
                         console.log('[Backend] ✅ Risk score obtenido del backend:', risks.score);
                     } else {
-                        // Fallback a cálculo local
-                        risks = calculateRisks(data, currentProfile);
+                        risks = calculateRisks(data);
                         console.log('[Frontend] ⚠️ Risk score calculado localmente (fallback):', risks.score);
                     }
                 } else {
-                    // Backend no configurado, usar cálculo local
-                    risks = calculateRisks(data, currentProfile);
+                    risks = calculateRisks(data);
 
                     // Verificar si estamos usando datos de ejemplo
                     if (data.frontend && data.frontend.source === 'offline_example') {
@@ -5814,7 +5639,7 @@
                 category = getCategory(risks.score);
                 alert = generateAlert(risks, data);
 
-                const recommendation = getRecommendation(currentProfile, category, risks);
+                const recommendation = getRecommendation(category, risks);
                 const current = data.current;
                 const hourly = data.hourly || [];
 
@@ -5949,25 +5774,7 @@
                         </div>
                     </div>
 
-                    <!-- Profile Selector (Compact) (3) -->
-                    <div class="card profile-selector">
-                        <div class="card-header">
-                            <span class="card-title">Tu Perfil</span>
-                        </div>
-                        <div class="profile-grid">
-                            ${Object.entries(PROFILES).map(([key, profile]) => `
-                                <button class="profile-btn ${currentProfile === key ? 'active' : ''} ${profile.link ? 'has-link' : ''}" 
-                                        onclick="${profile.link ? `window.location.href='${profile.link}'` : `selectProfile('${key}')`}"
-                                        aria-label="${profile.link ? 'Ir a ' + profile.name : 'Seleccionar perfil ' + profile.name}"
-                                        aria-pressed="${currentProfile === key}">
-                                    <span class="icon" aria-hidden="true">${profile.icon}</span>
-                                    <span>${profile.name}</span>
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <!-- Recomendación (4) -->
+                    <!-- Recomendación (3) -->
                     <div class="card recommendation-card">
                         <div class="card-header">
                             <span class="card-title">Recomendación</span>
@@ -6581,19 +6388,6 @@
             }
         };
 
-        // ============ PROFILE SELECTION ============
-        const selectProfile = async (profile) => {
-            currentProfile = profile;
-            try {
-                localStorage.setItem('skypulse_profile', profile);
-            } catch (_) {
-                // ignorar si localStorage no disponible
-            }
-            if (weatherData) {
-                await renderDashboard(weatherData);
-            }
-        };
-
         // ============ MODERN LOADER ANIMATION ============
         const loaderMessages = [
             "Conectando...",
@@ -6964,38 +6758,12 @@
                 }
             });
 
-            // Inicializar botones de perfiles
-            document.querySelectorAll('[onclick*="selectProfile"]').forEach(btn => {
-                const onclickAttr = btn.getAttribute('onclick');
-                const profileMatch = onclickAttr?.match(/selectProfile\('(\w+)'\)/);
-                const linkMatch = onclickAttr?.match(/window\.location\.href='([^']+)'/);
-
-                if (profileMatch) {
-                    btn.removeAttribute('onclick');
-                    btn.addEventListener('click', () => selectProfile(profileMatch[1]));
-                } else if (linkMatch) {
-                    btn.removeAttribute('onclick');
-                    btn.addEventListener('click', () => {
-                        window.location.href = linkMatch[1];
-                    });
-                }
-            });
         };
 
         // ============ INIT ============
         const init = async () => {
             // Limpiar timers anteriores si existen
             timers.clearAll();
-
-            // Restaurar perfil guardado
-            try {
-                const storedProfile = localStorage.getItem('skypulse_profile');
-                if (storedProfile && Object.prototype.hasOwnProperty.call(PROFILES, storedProfile)) {
-                    currentProfile = storedProfile;
-                }
-            } catch (_) {
-                // ignorar si localStorage no disponible
-            }
 
             // Inicializar panel de alertas (Fase 3)
             updateClock();
@@ -7108,9 +6876,6 @@
                 }
             }
         };
-
-        // Make selectProfile global
-        window.selectProfile = selectProfile;
 
         // ============ THEME TOGGLE ============
         const themeToggle = document.getElementById('themeToggle');

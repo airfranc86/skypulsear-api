@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#001B3C">
+    <title>Error - SkyPulse</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --windy-deep-blue: #001B3C;
+            --windy-cyan: #00D1FF;
+            --gray-400: #9CA3AF;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #0a1628 0%, var(--windy-deep-blue) 40%, #0d2847 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-link {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo-link:hover { color: var(--windy-cyan); }
+
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--windy-cyan);
+        }
+
+        main {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+            text-align: center;
+        }
+
+        .code {
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--windy-cyan);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            color: var(--gray-400);
+            margin-bottom: 2rem;
+        }
+
+        .suggestions {
+            text-align: left;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .suggestions h3 {
+            font-size: 0.9rem;
+            color: var(--windy-cyan);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .suggestions ul {
+            list-style: none;
+        }
+
+        .suggestions li {
+            padding: 0.35rem 0;
+            padding-left: 1.25rem;
+            position: relative;
+        }
+
+        .suggestions li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--windy-cyan);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--windy-cyan);
+            color: var(--windy-deep-blue);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 209, 255, 0.35);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--windy-cyan);
+            color: var(--windy-cyan);
+        }
+
+        .other-errors {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .other-errors h3 {
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .other-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .other-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .other-links a:hover {
+            color: var(--windy-cyan);
+            border-color: var(--windy-cyan);
+        }
+
+        .other-links a.current {
+            color: var(--windy-cyan);
+            border-color: var(--windy-cyan);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo-link">SkyPulse</a>
+            <nav>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="index.html" class="nav-link">Inicio</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div id="content">
+            <!-- Rellenado por script según ?code= -->
+        </div>
+
+        <div class="other-errors">
+            <h3>Otros errores frecuentes</h3>
+            <div class="other-links">
+                <a href="error.html?code=404" id="link-404">404 No encontrado</a>
+                <a href="error.html?code=500" id="link-500">500 Error del servidor</a>
+                <a href="error.html?code=503" id="link-503">503 Servicio no disponible</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code') || '404';
+            var codes = {
+                '404': {
+                    title: 'Página no encontrada',
+                    description: 'La ruta o el recurso que buscas no existe o fue movido.',
+                    suggestions: [
+                        'Comprueba que la URL sea correcta.',
+                        'Usa el menú o el enlace al Dashboard para volver.',
+                        'Si llegaste desde un enlace externo, puede estar roto o desactualizado.'
+                    ],
+                    icon: '🔍'
+                },
+                '500': {
+                    title: 'Error interno del servidor',
+                    description: 'Algo falló en el servidor. No es culpa tuya.',
+                    suggestions: [
+                        'Vuelve a intentar en unos segundos.',
+                        'Si el problema continúa, el equipo está trabajando en ello.',
+                        'Usa el Dashboard o la página de inicio mientras tanto.'
+                    ],
+                    icon: '⚠️'
+                },
+                '503': {
+                    title: 'Servicio no disponible',
+                    description: 'El servicio está temporalmente fuera de línea o sobrecargado.',
+                    suggestions: [
+                        'Es habitual en mantenimientos o picos de uso.',
+                        'Reintenta en unos minutos.',
+                        'La API de datos meteorológicos puede estar ocupada; el fallback se activará al recuperarse.'
+                    ],
+                    icon: '🔄'
+                }
+            };
+
+            var data = codes[code] || codes['404'];
+            if (!codes[code]) code = '404';
+
+            var content = document.getElementById('content');
+            content.innerHTML =
+                '<p class="code">' + data.icon + ' ' + code + '</p>' +
+                '<h1 class="title">' + data.title + '</h1>' +
+                '<p class="description">' + data.description + '</p>' +
+                '<div class="suggestions">' +
+                '<h3>Qué puedes hacer</h3><ul>' +
+                data.suggestions.map(function (s) { return '<li>' + s + '</li>'; }).join('') +
+                '</ul></div>' +
+                '<div class="actions">' +
+                '<a href="dashboard.html" class="btn btn-primary">Ir al Dashboard</a>' +
+                '<a href="index.html" class="btn btn-secondary">Ir al inicio</a>' +
+                '</div>';
+
+            document.title = code + ' - ' + data.title + ' - SkyPulse';
+
+            var currentLink = document.getElementById('link-' + code);
+            if (currentLink) currentLink.classList.add('current');
+        })();
+    </script>
+</body>
+
+</html>

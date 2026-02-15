@@ -1,0 +1,23 @@
+{
+  "name": "skypulse-monorepo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SkyPulse - Monorepo con Turborepo",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "test:local": "powershell -ExecutionPolicy Bypass -File scripts/test_local.ps1",
+    "test:backend": "powershell -ExecutionPolicy Bypass -File scripts/test_backend.ps1",
+    "test:frontend": "powershell -ExecutionPolicy Bypass -File scripts/test_frontend.ps1"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

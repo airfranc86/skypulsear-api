@@ -32,23 +32,19 @@ class SkyPulseAPI {
             console.log('[SkyPulseAPI] 📤 Headers de petición:', headers);
         }
 
-        // Timeout por defecto: 10 segundos
-        const timeout = options.timeout || 10000;
+        // Timeout por defecto: 25s (cold start Render free puede ~30s; 10s cortaba siempre)
+        const timeout = options.timeout || 25000;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         try {
-            // Crear promesa con timeout
-            const fetchPromise = fetch(url, {
+            const response = await fetch(url, {
                 ...options,
                 headers,
+                signal: controller.signal,
             });
-
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    reject(new Error(`Timeout: La petición excedió ${timeout / 1000} segundos`));
-                }, timeout);
-            });
-
-            const response = await Promise.race([fetchPromise, timeoutPromise]);
+            clearTimeout(timeoutId);
 
             // Manejar rate limiting
             if (response.status === 429) {
@@ -71,6 +67,13 @@ class SkyPulseAPI {
 
             return await response.json();
         } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                const timeoutErr = new Error(`Timeout: La petición excedió ${timeout / 1000} segundos`);
+                timeoutErr.name = 'AbortError';
+                console.error('[SkyPulseAPI]', timeoutErr.message);
+                throw timeoutErr;
+            }
             console.error('Error en petición API:', error);
             throw error;
         }

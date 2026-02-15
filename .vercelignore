@@ -1,7 +1,8 @@
 # .vercelignore - Archivos a excluir del deploy de Vercel
+# Frontend estático: solo apps/web/ se deployea en Vercel
 
-# Directorios y archivos de desarrollo/backend
-app/
+# Directorios de desarrollo y backend
+apps/api/
 tests/
 scripts/
 .venv/
@@ -10,25 +11,44 @@ scripts/
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+.git/
+.github/
 
-# Archivos de configuración de backend
-requirements.txt
+# Archivos de configuración de backend (ahora en apps/api/)
 render.yaml
 docker-compose.monitoring.yml
 prometheus.yml
 docker-compose.yml
 
 # Directorios de trabajo legacy
-.legacy_streamlit/
+_legacy_streamlit/
 Instagram/
 
-# Archivos de documentación y desarrollo
+# Documentación y desarrollo
 README.md
+*.md
 PHASE*.md
-AWS_S3_PHASE3_CONFIG.env
+Reportes/
 AGENTS.md
-.DS_Store
-*.log
+AWS_S3_PHASE3_CONFIG.env
+CONFIGURACION_LOCAL.md
 
-# Solo incluir el directorio public/
-public/
+# Archivos de backup y temporales
+*.bak
+*.log
+*.tmp
+*.trace
+*.out
+.DS_Store
+Thumbs.db
+
+# Configuración del monorepo (no necesario para frontend)
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+turbo.json
+pytest.ini
+coverage.xml
+SkyPulse.code-workspace
+
+# Solo incluir apps/web/ para deploy

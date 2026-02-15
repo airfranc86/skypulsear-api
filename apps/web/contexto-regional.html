@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#001B3C">
+    <title>Contexto Regional - Córdoba - SkyPulse</title>
+    <link rel="icon" type="image/png" href="assets/images/logos/Logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --windy-deep-blue: #001B3C;
+            --windy-cyan: #00D1FF;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --light-text: #111827;
+            --light-text-secondary: #4B5563;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #0a1628 0%, #001B3C 40%, #0d2847 100%);
+            min-height: 100vh;
+            color: #fff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        body.light { background: linear-gradient(145deg, #F3F4F6 0%, #E5E7EB 40%, #F9FAFB 100%); color: var(--light-text); }
+        .header { background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: var(--space-4) var(--space-6); position: sticky; top: 0; z-index: 100; }
+        body.light .header { background: rgba(255, 255, 255, 0.85); border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+        .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+        .logo { display: flex; align-items: center; gap: var(--space-3); text-decoration: none; color: inherit; }
+        .logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(0, 209, 255, 0.3); }
+        .logo-text h1 { font-size: 1.1rem; font-weight: 700; background: linear-gradient(135deg, #fff, var(--windy-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        body.light .logo-text h1 { background: linear-gradient(135deg, var(--windy-deep-blue), var(--windy-cyan)); -webkit-text-fill-color: transparent; background-clip: text; }
+        .logo-text span { font-size: 0.6rem; color: var(--windy-cyan); text-transform: uppercase; letter-spacing: 0.1em; }
+        .nav-links { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+        .nav-link { display: inline-flex; padding: var(--space-2) var(--space-4); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-md); color: var(--gray-400); font-size: 0.85rem; text-decoration: none; transition: all 0.2s ease; }
+        body.light .nav-link { background: rgba(0, 27, 60, 0.05); border-color: rgba(0, 27, 60, 0.1); color: var(--light-text-secondary); }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(0, 209, 255, 0.3); color: var(--windy-cyan); }
+        body.light .nav-link:hover { background: rgba(0, 209, 255, 0.08); color: var(--windy-deep-blue); }
+        .nav-link.active { background: rgba(0, 209, 255, 0.15); border-color: rgba(0, 209, 255, 0.3); color: var(--windy-cyan); }
+        body.light .nav-link.active { background: rgba(0, 209, 255, 0.12); color: var(--windy-deep-blue); }
+        main { max-width: 900px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+        .page-title { font-size: 1.75rem; font-weight: 700; margin-bottom: var(--space-3); background: linear-gradient(135deg, #fff, var(--windy-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        body.light .page-title { background: linear-gradient(135deg, var(--windy-deep-blue), var(--windy-cyan)); -webkit-text-fill-color: transparent; background-clip: text; }
+        .page-intro { color: var(--gray-400); font-size: 0.95rem; margin-bottom: var(--space-8); padding-bottom: var(--space-6); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        body.light .page-intro { color: var(--light-text-secondary); border-bottom-color: rgba(0, 0, 0, 0.08); }
+        .card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: var(--space-6); margin-bottom: var(--space-6); }
+        body.light .card { background: rgba(255, 255, 255, 0.9); border-color: rgba(0, 0, 0, 0.06); }
+        .card h2 { font-size: 1.1rem; font-weight: 600; color: var(--windy-cyan); margin-bottom: var(--space-4); }
+        body.light .card h2 { color: var(--windy-deep-blue); }
+        .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--gray-400); margin: var(--space-4) 0 var(--space-2); }
+        body.light .card h3 { color: var(--light-text-secondary); }
+        .card p, .card ul { color: var(--gray-400); font-size: 0.9rem; margin-bottom: var(--space-4); }
+        body.light .card p, body.light .card ul { color: var(--light-text-secondary); }
+        .card ul { list-style: none; }
+        .card li { margin-bottom: var(--space-2); padding-left: 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: var(--space-3); }
+        th, td { padding: var(--space-2) var(--space-3); text-align: left; border: 1px solid rgba(255, 255, 255, 0.1); }
+        body.light th, body.light td { border-color: rgba(0, 0, 0, 0.08); }
+        th { background: rgba(0, 209, 255, 0.1); color: var(--windy-cyan); font-weight: 600; }
+        body.light th { background: rgba(0, 27, 60, 0.06); color: var(--windy-deep-blue); }
+        .footer { text-align: center; padding: var(--space-6); color: var(--gray-500); font-size: 0.8rem; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+        body.light .footer { border-top-color: rgba(0, 0, 0, 0.06); }
+        .footer a { color: var(--windy-cyan); text-decoration: none; }
+        .theme-toggle { position: fixed; bottom: var(--space-6); right: var(--space-6); z-index: 1000; width: 48px; height: 48px; border-radius: 9999px; background: rgba(0, 209, 255, 0.1); border: 1px solid rgba(0, 209, 255, 0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); }
+        body.light .theme-toggle { background: rgba(0, 27, 60, 0.05); border-color: rgba(0, 27, 60, 0.1); }
+        .theme-toggle svg { width: 24px; height: 24px; stroke: var(--windy-cyan); stroke-width: 1.5; }
+        body.light .theme-toggle svg { stroke: var(--windy-deep-blue); }
+        .theme-toggle svg.sun { display: block; } .theme-toggle svg.moon { display: none; }
+        body.light .theme-toggle svg.sun { display: none; } .theme-toggle svg.moon { display: block; }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="dashboard.html" class="logo">
+                <img src="assets/images/logos/Logo.png" alt="SkyPulse" class="logo-img" width="40" height="40">
+                <div class="logo-text"><h1>SkyPulse</h1><span>El clima traducido a riesgo real</span></div>
+            </a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link">Panel</a>
+                <a href="fuentes-y-metodologia.html" class="nav-link">Fuentes</a>
+                <a href="modelos-y-datos.html" class="nav-link">Modelos</a>
+                <a href="contexto-regional.html" class="nav-link active">Contexto</a>
+                <a href="investigacion-tecnica.html" class="nav-link">Investigación</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="page-title">Contexto regional: Córdoba</h1>
+        <p class="page-intro">
+            Resumen del clima y la dinámica atmosférica de la provincia de Córdoba: vientos predominantes, tormentas estivales y el rol de la presión y la orografía. Fundamenta la interpretación del riesgo en la región.
+        </p>
+
+        <section class="card">
+            <h2>Vientos predominantes por estación</h2>
+            <p>La circulación en superficie varía a lo largo del año. Las Sierras de Córdoba actúan como barrera orográfica y modifican el flujo; en invierno destaca el viento Zonda (oeste/noroeste).</p>
+            <h3>Verano (dic–feb)</h3>
+            <ul>
+                <li>Alternancia entre vientos cálidos y irrupciones del sur (pamperos). Mar Chiquita: este, nordeste, sudoeste.</li>
+                <li>Olas de calor seguidas de tormentas intensas y descenso térmico.</li>
+                <li>Salinas Grandes (noroeste) como centro de baja presión estival; en sierras, tormentas convectivas más violentas que en llanura.</li>
+            </ul>
+            <h3>Otoño e invierno</h3>
+            <ul>
+                <li>Otoño: transición; abril seco, mayo primeras heladas.</li>
+                <li>Invierno: vientos del sur dominantes; Zonda ocasional (ráfagas, luego entrada de aire frío). Noches calmas favorecen heladas.</li>
+            </ul>
+            <h3>Primavera</h3>
+            <ul>
+                <li>Estación más variable y ventosa; grandes amplitudes térmicas y riesgo de granizo y tormentas severas.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Tormentas estivales y orografía</h2>
+            <p>Más del 80% de la precipitación anual (~800 mm) se concentra entre noviembre y marzo. Las Sierras Pampeanas (orientación norte–sur, máx. ~2.790 m en Cerro Champaquí) modifican la convección.</p>
+            <ul>
+                <li><strong>Disparo:</strong> Convección térmica diurna + ascenso forzado por las sierras (aire húmedo del este/noreste) + baja térmica sobre Salinas Grandes (convergencia).</li>
+                <li><strong>Propagación:</strong> Tormentas que se forman sobre las sierras suelen desplazarse hacia el este, afectando Córdoba capital y llanura.</li>
+                <li><strong>Barlovento/sotavento:</strong> Faldas orientales hasta ~1.500 mm/año; pampa seca al oeste 300–500 mm/año (sombra de lluvia).</li>
+                <li><strong>Fenómenos severos:</strong> Granizo, ráfagas, actividad eléctrica; relevante para aviación y agricultura.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Presión atmosférica y sistemas</h2>
+            <p>La presión condiciona la circulación y la estabilidad. En Córdoba, una red de EMAs (ej. 82 estaciones, 18 con datos completos) mide presión entre otros parámetros (unidad: hPa).</p>
+            <ul>
+                <li><strong>Baja presión estival:</strong> Salinas Grandes (noroeste) como centro ciclónico; polo de calor e influencia en la circulación regional.</li>
+                <li><strong>Alta presión:</strong> Invierno predominantemente seco y estable; subsidencia inhibe nubes.</li>
+                <li><strong>Inestabilidad:</strong> Bajas + aire cálido y húmedo favorecen desarrollo vertical (Cumulonimbus) y tormentas.</li>
+            </ul>
+            <h3>Precipitación y orografía</h3>
+            <table>
+                <thead><tr><th>Región</th><th>Precipitación anual</th><th>Notas</th></tr></thead>
+                <tbody>
+                    <tr><td>Pampa húmeda (este)</td><td>~900 mm</td><td>Lluvias estivales abundantes</td></tr>
+                    <tr><td>Faldas orientales sierras</td><td>hasta ~1.500 mm</td><td>Precipitación orográfica</td></tr>
+                    <tr><td>Pampa seca (oeste)</td><td>300–500 mm</td><td>Sombra de lluvia</td></tr>
+                    <tr><td>Salinas Grandes (noroeste)</td><td>~400 mm</td><td>Muy continental, baja térmica estival</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <a href="dashboard.html">Panel</a> ·
+        <a href="fuentes-y-metodologia.html">Fuentes</a> ·
+        <a href="modelos-y-datos.html">Modelos</a> ·
+        <a href="contexto-regional.html">Contexto</a> ·
+        <a href="investigacion-tecnica.html">Investigación</a>
+        <p style="margin-top: 0.5rem;">© 2025 SkyPulse.</p>
+    </footer>
+
+    <button type="button" class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
+    <script>
+        (function() {
+            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+            document.getElementById('themeToggle').addEventListener('click', function() {
+                document.body.classList.toggle('light');
+                localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+            });
+        })();
+    </script>
+</body>
+
+</html>

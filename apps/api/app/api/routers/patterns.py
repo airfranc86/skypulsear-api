@@ -78,9 +78,11 @@ async def get_detected_patterns(
         )
 
         if not forecasts:
-            raise HTTPException(
-                status_code=503,
-                detail="No se pudieron obtener datos meteorológicos. Intente más tarde.",
+            return PatternsResponse(
+                location={"lat": lat, "lon": lon},
+                patterns=[],
+                pattern_count=0,
+                max_risk_level="bajo",
             )
 
         # 2. Detectar patrones

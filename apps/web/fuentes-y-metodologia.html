@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#001B3C">
-    <title>Investigación Técnica y Datos Oficiales - SkyPulse</title>
+    <title>Fuentes y Metodología - SkyPulse</title>
     <link rel="icon" type="image/png" href="assets/images/logos/Logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --windy-deep-blue: #001B3C;
@@ -19,14 +20,22 @@
             --gray-600: #4B5563;
             --radius-md: 10px;
             --radius-lg: 16px;
+            --space-2: 0.5rem;
             --space-3: 0.75rem;
             --space-4: 1rem;
             --space-5: 1.25rem;
             --space-6: 1.5rem;
             --space-8: 2rem;
+            --light-bg: #F9FAFB;
+            --light-text: #111827;
+            --light-text-secondary: #4B5563;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -37,9 +46,10 @@
             -webkit-font-smoothing: antialiased;
             transition: background 0.3s ease, color 0.3s ease;
         }
+
         body.light {
             background: linear-gradient(145deg, #F3F4F6 0%, #E5E7EB 40%, #F9FAFB 100%);
-            color: #111827;
+            color: var(--light-text);
         }
 
         .header {
@@ -51,6 +61,7 @@
             top: 0;
             z-index: 100;
         }
+
         body.light .header {
             background: rgba(255, 255, 255, 0.85);
             border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -90,6 +101,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+
         body.light .logo-text h1 {
             background: linear-gradient(135deg, var(--windy-deep-blue), var(--windy-cyan));
             -webkit-text-fill-color: transparent;
@@ -103,12 +115,17 @@
             letter-spacing: 0.1em;
         }
 
-        .nav-links { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            flex-wrap: wrap;
+        }
+
         .nav-link {
             display: inline-flex;
             align-items: center;
-            gap: var(--space-3);
-            padding: 0.5rem var(--space-4);
+            padding: var(--space-2) var(--space-4);
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-md);
@@ -117,15 +134,35 @@
             text-decoration: none;
             transition: all 0.2s ease;
         }
-        body.light .nav-link { background: rgba(0, 27, 60, 0.05); border-color: rgba(0, 27, 60, 0.1); color: #4B5563; }
+
+        body.light .nav-link {
+            background: rgba(0, 27, 60, 0.05);
+            border-color: rgba(0, 27, 60, 0.1);
+            color: var(--light-text-secondary);
+        }
+
         .nav-link:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: rgba(0, 209, 255, 0.3);
             color: var(--windy-cyan);
         }
-        body.light .nav-link:hover { background: rgba(0, 209, 255, 0.08); color: var(--windy-deep-blue); }
-        .nav-link.active { background: rgba(0, 209, 255, 0.15); border-color: rgba(0, 209, 255, 0.3); color: var(--windy-cyan); }
-        body.light .nav-link.active { background: rgba(0, 209, 255, 0.12); color: var(--windy-deep-blue); }
+
+        body.light .nav-link:hover {
+            background: rgba(0, 209, 255, 0.08);
+            border-color: rgba(0, 209, 255, 0.25);
+            color: var(--windy-deep-blue);
+        }
+
+        .nav-link.active {
+            background: rgba(0, 209, 255, 0.15);
+            border-color: rgba(0, 209, 255, 0.3);
+            color: var(--windy-cyan);
+        }
+
+        body.light .nav-link.active {
+            background: rgba(0, 209, 255, 0.12);
+            color: var(--windy-deep-blue);
+        }
 
         main {
             max-width: 900px;
@@ -143,6 +180,12 @@
             background-clip: text;
         }
 
+        body.light .page-title {
+            background: linear-gradient(135deg, var(--windy-deep-blue), var(--windy-cyan));
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
         .page-intro {
             color: var(--gray-400);
             font-size: 0.95rem;
@@ -150,7 +193,11 @@
             padding-bottom: var(--space-6);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
-        body.light .page-intro { color: #4B5563; border-bottom-color: rgba(0, 0, 0, 0.08); }
+
+        body.light .page-intro {
+            color: var(--light-text-secondary);
+            border-bottom-color: rgba(0, 0, 0, 0.08);
+        }
 
         .card {
             background: rgba(255, 255, 255, 0.04);
@@ -159,7 +206,11 @@
             padding: var(--space-6);
             margin-bottom: var(--space-6);
         }
-        body.light .card { background: rgba(255, 255, 255, 0.9); border-color: rgba(0, 0, 0, 0.06); }
+
+        body.light .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
 
         .card h2 {
             font-size: 1.1rem;
@@ -170,7 +221,10 @@
             align-items: center;
             gap: var(--space-3);
         }
-        body.light .card h2 { color: var(--windy-deep-blue); }
+
+        body.light .card h2 {
+            color: var(--windy-deep-blue);
+        }
 
         .card h2 svg {
             width: 20px;
@@ -178,12 +232,28 @@
             stroke: var(--windy-cyan);
         }
 
+        body.light .card h2 svg {
+            stroke: var(--windy-deep-blue);
+        }
+
+        .card p,
+        .card ul {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+            margin-bottom: var(--space-4);
+        }
+
+        body.light .card p,
+        body.light .card ul {
+            color: var(--light-text-secondary);
+        }
+
         .card ul {
             list-style: none;
         }
 
         .card li {
-            margin-bottom: var(--space-3);
+            margin-bottom: var(--space-2);
             padding-left: 0;
         }
 
@@ -194,32 +264,23 @@
             transition: color 0.2s, border-color 0.2s;
         }
 
+        body.light .card a {
+            color: var(--windy-deep-blue);
+        }
+
         .card a:hover {
             color: var(--windy-cyan);
             border-bottom-color: var(--windy-cyan);
         }
-        body.light .card p, body.light .card li { color: #4B5563; }
-        body.light .card a { color: #001B3C; }
-        body.light .card a:hover { color: var(--windy-deep-blue); }
+
+        body.light .card a:hover {
+            color: var(--windy-deep-blue);
+        }
 
         .card .external {
             font-size: 0.8rem;
             color: var(--gray-500);
             margin-left: 4px;
-        }
-
-        .card p {
-            color: var(--gray-400);
-            font-size: 0.9rem;
-            margin-bottom: var(--space-4);
-        }
-
-        .card code {
-            font-size: 0.85em;
-            padding: 0.15em 0.4em;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .disclaimer {
@@ -231,7 +292,10 @@
             font-size: 0.85rem;
             color: var(--gray-400);
         }
-        body.light .disclaimer { color: #4B5563; }
+
+        body.light .disclaimer {
+            color: var(--light-text-secondary);
+        }
 
         .footer {
             text-align: center;
@@ -239,6 +303,10 @@
             color: var(--gray-500);
             font-size: 0.8rem;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        body.light .footer {
+            border-top-color: rgba(0, 0, 0, 0.06);
         }
 
         .footer a {
@@ -249,7 +317,6 @@
         .footer a:hover {
             text-decoration: underline;
         }
-        body.light .footer { border-top-color: rgba(0, 0, 0, 0.06); }
 
         .theme-toggle {
             position: fixed;
@@ -268,16 +335,61 @@
             transition: all 0.2s ease;
             backdrop-filter: blur(10px);
         }
-        body.light .theme-toggle { background: rgba(0, 27, 60, 0.05); border-color: rgba(0, 27, 60, 0.1); }
-        .theme-toggle:hover { background: rgba(0, 209, 255, 0.15); transform: scale(1.05); }
-        .theme-toggle svg { width: 24px; height: 24px; stroke: var(--windy-cyan); stroke-width: 1.5; }
-        body.light .theme-toggle svg { stroke: var(--windy-deep-blue); }
-        .theme-toggle svg.sun { display: block; } .theme-toggle svg.moon { display: none; }
-        body.light .theme-toggle svg.sun { display: none; } .theme-toggle svg.moon { display: block; }
+
+        body.light .theme-toggle {
+            background: rgba(0, 27, 60, 0.05);
+            border-color: rgba(0, 27, 60, 0.1);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(0, 209, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--windy-cyan);
+            stroke-width: 1.5;
+        }
+
+        body.light .theme-toggle svg {
+            stroke: var(--windy-deep-blue);
+        }
+
+        .theme-toggle svg.sun {
+            display: block;
+        }
+
+        .theme-toggle svg.moon {
+            display: none;
+        }
+
+        body.light .theme-toggle svg.sun {
+            display: none;
+        }
+
+        .theme-toggle svg.moon {
+            display: block;
+        }
 
         @media (max-width: 600px) {
-            main { padding: var(--space-6) var(--space-4); }
-            .page-title { font-size: 1.4rem; }
+            main {
+                padding: var(--space-6) var(--space-4);
+            }
+
+            .page-title {
+                font-size: 1.4rem;
+            }
+
+            .nav-links {
+                gap: var(--space-1);
+            }
+
+            .nav-link {
+                padding: var(--space-2) var(--space-3);
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -294,83 +406,65 @@
             </a>
             <nav class="nav-links">
                 <a href="dashboard.html" class="nav-link">Panel</a>
-                <a href="fuentes-y-metodologia.html" class="nav-link">Fuentes</a>
+                <a href="fuentes-y-metodologia.html" class="nav-link active">Fuentes</a>
                 <a href="modelos-y-datos.html" class="nav-link">Modelos</a>
                 <a href="contexto-regional.html" class="nav-link">Contexto</a>
-                <a href="investigacion-tecnica.html" class="nav-link active">Investigación</a>
+                <a href="investigacion-tecnica.html" class="nav-link">Investigación</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <h1 class="page-title">Investigación Técnica y Datos Oficiales</h1>
+        <h1 class="page-title">Fuentes y Metodología</h1>
         <p class="page-intro">
-            SkyPulse se fundamenta en fuentes oficiales y documentación técnica. Para decisiones críticas u operativas, consulte siempre los organismos y enlaces que se detallan a continuación.
+            SkyPulse traduce datos meteorológicos en información clara y situada. Esta página recoge la filosofía del
+            proyecto y las fuentes de referencia que sustentan las metodologías y el contexto operativo.
         </p>
 
         <section class="card">
-            <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-                Fuentes de datos utilizadas por SkyPulse
-            </h2>
-            <ul>
-                <li><a href="https://www.windy.com" target="_blank" rel="noopener noreferrer">Windy <span class="external">↗</span></a> — Datos y visualización meteorológica</li>
-                <li><a href="https://aviationweather.gov" target="_blank" rel="noopener noreferrer">Aviation Weather Center (AWC) <span class="external">↗</span></a> — Información aeronáutica oficial (EE. UU.)</li>
-                <li><a href="https://www.smn.gob.ar" target="_blank" rel="noopener noreferrer">Servicio Meteorológico Nacional (SMN) - Argentina <span class="external">↗</span></a> — Pronósticos y alertas oficiales</li>
-            </ul>
+            <h2>Visión y misión</h2>
+            <p>El clima no es solo un dato ni un pronóstico aislado. Es un sistema en movimiento que cambia según el
+                territorio. En Córdoba, las sierras influyen en los vientos, la presión y la forma en que se desarrollan
+                las tormentas.</p>
+            <p><strong>Misión:</strong> Traducir datos meteorológicos en información clara, situada y útil para el
+                campo, la ciudad y la operación aérea. Menos ruido, más criterio para decidir.</p>
         </section>
 
         <section class="card">
-            <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-                Organismos oficiales y referencias
-            </h2>
-            <ul>
-                <li><a href="https://www.smn.gob.ar" target="_blank" rel="noopener noreferrer">SMN Argentina <span class="external">↗</span></a></li>
-                <li><a href="https://www.argentina.gob.ar/inta" target="_blank" rel="noopener noreferrer">INTA (Instituto Nacional de Tecnología Agropecuaria) <span class="external">↗</span></a></li>
-                <li><a href="https://www.cba.gov.ar" target="_blank" rel="noopener noreferrer">Gobierno de Córdoba <span class="external">↗</span></a></li>
-                <li><a href="https://www.indec.gob.ar" target="_blank" rel="noopener noreferrer">INDEC <span class="external">↗</span></a></li>
-            </ul>
-        </section>
-
-        <section class="card">
-            <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
-                </svg>
-                Datos meteorológicos y modelos
-            </h2>
-            <ul>
-                <li><a href="https://registry.opendata.aws/smn-ar-wrf-dataset/" target="_blank" rel="noopener noreferrer">SMN AR WRF Dataset (Open Data on AWS) <span class="external">↗</span></a></li>
-                <li><a href="https://odp-aws-smn.github.io/documentation_wrf_det" target="_blank" rel="noopener noreferrer">Documentación WRF-SMN <span class="external">↗</span></a></li>
-            </ul>
-        </section>
-
-        <section class="card">
-            <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                    <line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/>
-                </svg>
-                Documentación técnica del proyecto
-            </h2>
-            <p>
-                El repositorio de SkyPulse incluye documentación de investigación sobre meteorología, modelos (WRF-SMN), sistemas de monitoreo en Argentina, física atmosférica y clima de Córdoba (presión, vientos, tormentas estivales, orografía). Esa documentación fundamenta las metodologías y el contexto operativo del sistema.
+            <h2>Fuente principal</h2>
+            <p><a href="https://ohmc.ar/" target="_blank" rel="noopener noreferrer">Observatorio Hidro-Meteorológico de
+                    Córdoba (OHMC) <span class="external">↗</span></a></p>
+            <p>El OHMC fue creado en 2017 como iniciativa del gobierno provincial y la Universidad Nacional de Córdoba
+                para monitorear y prever eventos hidro-meteorológicos severos en la provincia y la Región Centro. Ofrece
+                radares, satélites (GOES), EMAs, pronóstico WRF y GFS, gestión del riesgo y acceso a datos de monitoreo.
             </p>
-            <p>
-                Para consultar la documentación técnica completa, revise el directorio <code>FuentesDeInvestigación</code> en el repositorio del proyecto o la documentación interna del equipo.
-            </p>
+        </section>
+
+        <section class="card">
+            <h2>Datos meteorológicos y modelos</h2>
+            <ul>
+                <li><a href="https://registry.opendata.aws/smn-ar-wrf-dataset/" target="_blank"
+                        rel="noopener noreferrer">SMN AR WRF Dataset (Open Data on AWS) <span
+                            class="external">↗</span></a></li>
+                <li><a href="https://odp-aws-smn.github.io/documentation_wrf_det" target="_blank"
+                        rel="noopener noreferrer">Documentación WRF-SMN <span class="external">↗</span></a></li>
+                <li><a href="http://www.cawcr.gov.au/projects/verification/" target="_blank"
+                        rel="noopener noreferrer">CAWCR Verification <span class="external">↗</span></a></li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Organismos oficiales (Argentina y Córdoba)</h2>
+            <ul>
+                <li><a href="https://www.smn.gob.ar" target="_blank" rel="noopener noreferrer">Servicio Meteorológico
+                        Nacional (SMN) <span class="external">↗</span></a></li>
+                <li><a href="https://www.argentina.gob.ar/inta" target="_blank" rel="noopener noreferrer">INTA <span
+                            class="external">↗</span></a></li>
+            </ul>
         </section>
 
         <div class="disclaimer">
-            ⚠️ <strong>Interpretación operativa.</strong> Para decisiones críticas, consulte siempre fuentes oficiales (SMN, AWC, organismos competentes).
+            Para decisiones críticas u operativas, consulte siempre fuentes oficiales (SMN, organismos competentes).
         </div>
     </main>
 
@@ -384,16 +478,25 @@
     </footer>
 
     <button type="button" class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5" />
+            <path
+                d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+        </svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
     </button>
 
     <script>
-        (function() {
-            if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
-            document.getElementById('themeToggle').addEventListener('click', function() {
+        (function () {
+            var theme = localStorage.getItem('theme') || 'dark';
+            if (theme === 'light') document.body.classList.add('light');
+            var btn = document.getElementById('themeToggle');
+            if (btn) btn.addEventListener('click', function () {
                 document.body.classList.toggle('light');
-                localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+                var isLight = document.body.classList.contains('light');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
             });
         })();
     </script>

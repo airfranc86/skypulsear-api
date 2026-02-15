@@ -9,7 +9,6 @@ from typing import List, Optional, Dict, Any
 from datetime import UTC, datetime, timedelta
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
-from botocore.config import Config
 import s3fs
 import xarray as xr
 import numpy as np
@@ -61,65 +60,14 @@ class WRFSMNRepository(IWeatherRepository):
         self.use_meteosource_fallback = False
         self.cache_ttl_hours = cache_ttl_hours
 
-        # Configurar acceso a S3 WRF-SMN Open Data (sin credenciales)
+        # Configurar acceso a S3 WRF-SMN: credenciales si existen, si no acceso anónimo
         self.s3_fs = None
         try:
-            # Para WRF-SMN Open Data, usamos acceso anónimo forzado
-            logger.info("Configurando acceso anónimo a WRF-SMN Open Data...")
-
-            # Limpiar temporalmente variables AWS para forzar acceso anónimo
-            aws_vars = [
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "AWS_SESSION_TOKEN",
-                "AWS_PROFILE",
-            ]
-            old_values = {}
-            for var in aws_vars:
-                old_values[var] = os.environ.pop(var, None)
-
-            try:
-                # Configurar s3fs anónimo (probado y funciona)
-                self.s3_fs = s3fs.S3FileSystem(anon=True)
-
-                # Probar acceso al bucket
-                test_path = f"s3://{self.AWS_BUCKET}"
-                if self.s3_fs.exists(test_path):
-                    logger.info(
-                        f"✅ Acceso anónimo exitoso a WRF-SMN: {self.AWS_BUCKET}"
-                    )
-                else:
-                    logger.error(f"No se puede acceder al bucket {self.AWS_BUCKET}")
-                    self.s3_fs = None
-
-            finally:
-                # Restaurar variables de entorno
-                for var, value in old_values.items():
-                    if value is not None:
-                        os.environ[var] = value
-
-        except Exception as e:
-            logger.error(f"No se pudo configurar acceso S3 anónimo: {e}")
-            self.s3_fs = None
-
-        except Exception as e:
-            logger.error(f"No se pudo configurar S3 con Bucket Keys: {e}")
-            self.s3_fs = None
-        try:
-            # Intentar usar credenciales si están disponibles
             aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
             aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-            aws_region = os.getenv("AWS_DEFAULT_REGION", "us-west-2")
-
-            # Configuración con Bucket Keys support
-            s3_config = Config(
-                region_name=aws_region,
-                signature_version="s3v4",
-                retries={"max_attempts": 3, "mode": "adaptive"},
-            )
+            aws_region = os.getenv("AWS_DEFAULT_REGION", self.AWS_REGION)
 
             if aws_access_key and aws_secret_key:
-                # Usar credenciales explícitas (si se proporcionan)
                 self.s3_fs = s3fs.S3FileSystem(
                     key=aws_access_key,
                     secret=aws_secret_key,
@@ -127,11 +75,15 @@ class WRFSMNRepository(IWeatherRepository):
                 )
                 logger.info("S3FileSystem configurado con credenciales AWS")
             else:
-                # Acceso anónimo para Open Data (fallback)
                 self.s3_fs = s3fs.S3FileSystem(anon=True)
                 logger.info("S3FileSystem configurado para acceso anónimo (Open Data)")
 
-            logger.info(f"Bucket S3 configurado: {self.AWS_BUCKET}")
+            test_path = f"s3://{self.AWS_BUCKET}"
+            if not self.s3_fs.exists(test_path):
+                logger.error(f"No se puede acceder al bucket {self.AWS_BUCKET}")
+                self.s3_fs = None
+            else:
+                logger.info(f"Acceso S3 exitoso a WRF-SMN: {self.AWS_BUCKET}")
 
         except Exception as e:
             logger.error(f"No se pudo configurar S3: {e}")

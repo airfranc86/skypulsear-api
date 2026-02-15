@@ -3946,6 +3946,20 @@
             meteosourceApiKey: null // ⚠️ Opcional: Para alertas (puede usar Open-Meteo)
         };
 
+        // Rehidratar ubicación desde localStorage (si existe)
+        try {
+            const storedLocation = localStorage.getItem('skypulse_location');
+            if (storedLocation) {
+                const loc = JSON.parse(storedLocation);
+                if (loc && typeof loc.lat === 'number' && typeof loc.lon === 'number' && loc.name) {
+                    const inList = CONFIG.locations.find(locItem => locItem.name === loc.name && locItem.lat === loc.lat && locItem.lon === loc.lon);
+                    CONFIG.location = inList ? { ...inList } : { name: loc.name, region: loc.region || '', lat: loc.lat, lon: loc.lon };
+                }
+            }
+        } catch (e) {
+            console.warn('[Config] Error rehidratando ubicación:', e);
+        }
+
         // ============ INICIALIZACIÓN FRONTEND-ONLY ============
         // Open-Meteo como fuente principal (gratuito, sin API key)
         // Windy como fallback (opcional, requiere API key)
@@ -4035,24 +4049,32 @@
         // ============ CACHE SYSTEM (TTL 30 min) con localStorage ============
         const CACHE_TTL = 30 * 60 * 1000; // 30 minutos en ms
         const CACHE_KEY = 'skypulse_weather_cache';
+        const CACHE_SCHEMA_VERSION = 1;
         const dashboardCache = {
             data: null,
             timestamp: null,
             locationKey: null // Clave para validar que el cache corresponde a la ubicación actual
         };
 
-        // Cargar cache desde localStorage al inicio
+        // Cargar cache desde localStorage al inicio (con versionado y validación)
         try {
             const storedCache = localStorage.getItem(CACHE_KEY);
             if (storedCache) {
                 const parsed = JSON.parse(storedCache);
-                dashboardCache.data = parsed.data;
-                dashboardCache.timestamp = parsed.timestamp;
-                dashboardCache.locationKey = parsed.locationKey;
-                console.log('[Cache] Cache cargado desde localStorage');
+                const validVersion = parsed.version === CACHE_SCHEMA_VERSION;
+                const validData = parsed.data && (typeof parsed.data.current === 'object' || typeof parsed.data.frontend === 'object');
+                if (validVersion && validData) {
+                    dashboardCache.data = parsed.data;
+                    dashboardCache.timestamp = parsed.timestamp;
+                    dashboardCache.locationKey = parsed.locationKey;
+                    console.log('[Cache] Cache cargado desde localStorage');
+                } else {
+                    localStorage.removeItem(CACHE_KEY);
+                }
             }
         } catch (e) {
             console.warn('[Cache] Error cargando cache desde localStorage:', e);
+            try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
         }
 
         const getFromCache = () => {
@@ -4079,11 +4101,17 @@
                 return dashboardCache.data;
             }
 
-            // Si no hay en memoria, intentar desde localStorage
+            // Si no hay en memoria, intentar desde localStorage (con versionado y validación)
             try {
                 const storedCache = localStorage.getItem(CACHE_KEY);
                 if (storedCache) {
                     const parsed = JSON.parse(storedCache);
+                    const validVersion = parsed.version === CACHE_SCHEMA_VERSION;
+                    const validData = parsed.data && (typeof parsed.data.current === 'object' || typeof parsed.data.frontend === 'object');
+                    if (!validVersion || !validData) {
+                        localStorage.removeItem(CACHE_KEY);
+                        return null;
+                    }
                     const locationKey = `${CONFIG.location.lat}-${CONFIG.location.lon}`;
 
                     if (parsed.locationKey === locationKey) {
@@ -4112,9 +4140,10 @@
             dashboardCache.timestamp = Date.now();
             dashboardCache.locationKey = `${CONFIG.location.lat}-${CONFIG.location.lon}`;
 
-            // Guardar también en localStorage
+            // Guardar también en localStorage (con versionado)
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    version: CACHE_SCHEMA_VERSION,
                     data: data,
                     timestamp: dashboardCache.timestamp,
                     locationKey: dashboardCache.locationKey
@@ -4129,6 +4158,7 @@
             dashboardCache.data = null;
             dashboardCache.timestamp = null;
             dashboardCache.locationKey = null;
+            try { localStorage.removeItem(CACHE_KEY); } catch (e) { console.warn('[Cache] Error limpiando localStorage:', e); }
         };
 
         const getCacheAge = () => {
@@ -6637,6 +6667,7 @@
                         // Callback ejecutado durante fade out
                         // Actualizar configuración
                         CONFIG.location = { ...newLocation };
+                        try { localStorage.setItem('skypulse_location', JSON.stringify(CONFIG.location)); } catch (_) {}
 
                         // Limpiar cache para forzar recarga con nueva ubicación
                         clearCache();
@@ -6676,6 +6707,7 @@
 
                     // Actualizar configuración
                     CONFIG.location = { ...newLocation };
+                    try { localStorage.setItem('skypulse_location', JSON.stringify(CONFIG.location)); } catch (_) {}
 
                     // Limpiar cache para forzar recarga con nueva ubicación
                     clearCache();

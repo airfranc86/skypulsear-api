@@ -1,0 +1,24 @@
+# .vercelignore – apps/web (solo excluir lo que no debe subir)
+# El sitio está en la raíz de apps/web (dashboard.html, index.html, js/, etc.), NO en public/
+
+# Entorno y secretos
+.env
+.env.local
+.env.*.local
+
+# Control de versiones y IDE
+.git/
+.github/
+.DS_Store
+
+# Desarrollo / temporales
+node_modules/
+deploy_temp/
+*.bak
+*.log
+*.tmp
+*.trace
+*.out
+
+# Documentación (opcional, no necesaria para servir el sitio)
+*.md

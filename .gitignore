@@ -19,6 +19,7 @@ env/
 .cursor/
 .Cursor/
 
+
 # OS
 .DS_Store
 Thumbs.db
@@ -28,6 +29,9 @@ Thumbs.db
 logs/
 
 # Testing (ya movido abajo)
+
+# Node
+node_modules/
 
 # Build
 dist/
@@ -66,3 +70,7 @@ coverage.xml
 htmlcov/
 .pytest_cache/
 .coverage
+tests/test-results/
+Reportes/
+testsprite_tests/
+tmp/

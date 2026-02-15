@@ -1,0 +1,10 @@
+{
+  "name": "@skypulse/web",
+  "version": "2.0.0",
+  "private": true,
+  "description": "SkyPulse Frontend",
+  "scripts": {
+    "dev": "echo 'Frontend estático - abrir apps/web/dashboard.html en navegador'",
+    "build": "echo 'Frontend estático - no build necesario'"
+  }
+}

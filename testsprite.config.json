@@ -1,0 +1,93 @@
+{
+    "name": "skypulse-testsprite",
+    "version": "1.0.0",
+    "description": "TestSprite MCP configuration for SkyPulse monorepo",
+    "mcp": {
+        "server": {
+            "name": "skypulse-api",
+            "command": "uvicorn",
+            "args": [
+                "app.api.main:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--reload"
+            ],
+            "env": {
+                "PYTHONPATH": "apps/api",
+                "ENVIRONMENT": "test"
+            },
+            "cwd": "apps/api",
+            "auto_start": false
+        },
+        "endpoints": {
+            "base_url": "http://localhost:8000",
+            "api_prefix": "/api/v1",
+            "timeout": 30,
+            "retry_attempts": 3,
+            "retry_delay": 1
+        },
+        "authentication": {
+            "type": "api_key",
+            "header": "X-API-Key",
+            "key": "demo-key",
+            "env_var": "VALID_API_KEYS"
+        }
+    },
+    "test_suites": {
+        "unit": {
+            "path": "tests/unit",
+            "pattern": "test_*.py",
+            "timeout": 10,
+            "requires_server": false
+        },
+        "integration": {
+            "path": "tests/integration",
+            "pattern": "test_*.py",
+            "timeout": 30,
+            "requires_server": true
+        },
+        "security": {
+            "path": "tests/security",
+            "pattern": "test_*.py",
+            "timeout": 20,
+            "requires_server": false
+        },
+        "all": {
+            "path": "tests",
+            "pattern": "test_*.py",
+            "timeout": 30,
+            "requires_server": false
+        }
+    },
+    "coverage": {
+        "enabled": true,
+        "threshold": 80,
+        "paths": [
+            "apps/api/app"
+        ],
+        "exclude": [
+            "**/__pycache__/**",
+            "**/tests/**",
+            "**/migrations/**",
+            "**/scripts/**"
+        ]
+    },
+    "reporting": {
+        "format": [
+            "json",
+            "html",
+            "terminal"
+        ],
+        "output_dir": "test-results",
+        "junit_xml": true
+    },
+    "pytest": {
+        "config_file": "pytest.ini",
+        "extra_args": [
+            "-v",
+            "--tb=short"
+        ]
+    }
+}

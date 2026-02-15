@@ -112,6 +112,16 @@ def _is_wrf_smn_enabled() -> bool:
     return os.getenv("WRF_SMN_ENABLED", "false").strip().lower() == "true"
 
 
+def _get_wrf_cache_ttl_hours() -> int:
+    """TTL del cache WRF-SMN en horas (default 6). Variable WRF_SMN_CACHE_TTL_HOURS."""
+    raw = os.getenv("WRF_SMN_CACHE_TTL_HOURS", "6").strip()
+    try:
+        val = int(raw)
+        return max(1, min(24, val))  # Clamp 1–24 h
+    except ValueError:
+        return 6
+
+
 def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     """
     Crear todos los repositorios disponibles según configuración.
@@ -132,7 +142,7 @@ def create_all_available_repositories() -> Dict[str, IWeatherRepository]:
     # WRF-SMN: habilitado por feature toggle WRF_SMN_ENABLED (default false)
     if _is_wrf_smn_enabled() and WRFSMN_AVAILABLE:
         try:
-            cache_ttl_hours = 6
+            cache_ttl_hours = _get_wrf_cache_ttl_hours()
             wrf_smn = WRFSMNRepository(
                 use_meteosource_fallback=False,
                 cache_ttl_hours=cache_ttl_hours,

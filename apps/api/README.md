@@ -48,7 +48,8 @@ pip install -r app/requirements.txt
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Opcionales; si no se setean, el acceso a WRF-SMN es anónimo (bucket público `smn-ar-wrf`). |
 | `AWS_DEFAULT_REGION` | Región AWS (default: `us-west-2`). |
 | `RISK_AGENTS_ENABLED` | Opcional. Si `true`, ejecuta Risk Evaluation Agents en background cada 60 s y expone métricas `skypulse_risk_agent_*` en `/api/v1/metrics`. Default: `false`. |
-| `WRF_SMN_ENABLED` | Opcional. Si `true`, habilita la fuente WRF-SMN (S3 `smn-ar-wrf`) en fusión con Windy; circuit breaker y cache 6 h. Default: `false`. Ver RFC M1 en `docs/RFC_M1_M2_M3_MODELADO_AMENAZAS_UX.md`. |
+| `WRF_SMN_ENABLED` | Opcional. Si `true`, habilita la fuente WRF-SMN (S3 `smn-ar-wrf`) en fusión con Windy; circuit breaker y cache. Default: `false`. Ver RFC M1 en `docs/RFC_M1_M2_M3_MODELADO_AMENAZAS_UX.md`. |
+| `WRF_SMN_CACHE_TTL_HOURS` | Opcional. TTL del cache local WRF-SMN en horas (1–24). Default: `6`. |
 
 ---
 
@@ -101,6 +102,13 @@ Si `RISK_AGENTS_ENABLED=true`, se ejecutan en background cada 60 s tres agentes 
 - **Ubicación:** `app/services/risk_agents/` (base, operational_failure, data_integrity, model_drift).
 - **Rollback:** Desactivar con `RISK_AGENTS_ENABLED=false` y redeploy; no hay cambios de contrato API.
 - **Documentación:** [docs/AUDITORIA_FASE_FEATURES_FIXES_RISK_AGENTS.md](../docs/AUDITORIA_FASE_FEATURES_FIXES_RISK_AGENTS.md) (métricas, umbrales sugeridos, procedimiento de rollback).
+
+---
+
+## M2 / M3 (RFC)
+
+- **Motor de amenazas (M2):** Contrato de salida en `app/models/threat_classification.py` (`ClassifiedThreat`, `ThreatType`). Uso futuro en pipeline de alertas/patrones.
+- **Categoría de vuelo (M3):** Criterios VFR/MVFR/IFR/LIFR en `app/utils/flight_category.py` (`get_flight_category(visibility_km, ceiling_m)`). Uso: badges OMM/OHMC en dashboard.
 
 ---
 

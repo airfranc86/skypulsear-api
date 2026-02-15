@@ -1,0 +1,4 @@
+# SkyPulse – raíz del monorepo
+# Para Render: build desde raíz con este archivo; start desde apps/api.
+# Incluye dependencias de la API (apps/api/app/requirements.txt).
+-r apps/api/app/requirements.txt

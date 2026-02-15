@@ -31,6 +31,7 @@ boto3>=1.29.0
 botocore>=1.32.0
 netCDF4>=1.6.0
 xarray>=2023.1.0
+h5netcdf>=1.2.0  # backend xarray para leer NetCDF/HDF5 desde S3 (WRF-SMN)
 s3fs>=2023.1.0
 
 # Utilidades

@@ -2116,12 +2116,14 @@
                 const isUsingExampleData = data.frontend && data.frontend.source === 'offline_example';
                 const sourceLabel = (() => {
                     const display = data.frontend?.meteoSourceDisplay;
-                    if (display && typeof display === 'string') return display;
-                    const s = data.frontend?.meteoSource ?? data.frontend?.source;
-                    if (s === 'open-meteo') return 'Open-Meteo';
-                    if (s === 'offline_example') return 'Ejemplo';
-                    if (s === 'fused' || s === 'backend') return 'Windy + WRF-SMN';
-                    return (typeof s === 'string' ? s.replace(/_/g, ' ') : '—');
+                    // Ignorar meteoSourceDisplay si dice "Open-Meteo" pero meteoSource es backend/fused
+                    const actualSource = data.frontend?.meteoSource ?? data.frontend?.source;
+                    const isBackend = actualSource === 'fused' || actualSource === 'backend';
+                    if (display && typeof display === 'string' && !isBackend) return display;
+                    if (isBackend) return display && display !== 'Open-Meteo' ? display : 'Windy + WRF-SMN';
+                    if (actualSource === 'open-meteo') return 'Open-Meteo';
+                    if (actualSource === 'offline_example') return 'Ejemplo';
+                    return (typeof actualSource === 'string' ? actualSource.replace(/_/g, ' ') : '—');
                 })();
                 const backendAvailable = !!(CONFIG.backendUrl && CONFIG.apiKey);
                 const currentSource = CONFIG.preferredSource || 'auto';

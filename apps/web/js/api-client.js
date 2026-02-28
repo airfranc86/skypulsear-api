@@ -33,7 +33,7 @@ class SkyPulseAPI {
         }
 
         // Timeout por defecto: 25s (cold start Render free puede ~30s; 10s cortaba siempre)
-        const timeout = options.timeout || 25000;
+        const timeout = options.timeout || 60000;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);

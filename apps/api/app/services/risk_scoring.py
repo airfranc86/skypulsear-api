@@ -246,9 +246,6 @@ class RiskScoringService:
         Returns:
             RiskScore con score 0-100 y detalles
         """
-        # Un solo perfil soportado: GENERAL (ignorar profile pasado por compatibilidad)
-        profile = UserProfile.GENERAL
-
         # Filtrar pronósticos por ventana temporal
         relevant_forecasts = [f for f in forecasts if f.forecast_hour <= hours_ahead]
 

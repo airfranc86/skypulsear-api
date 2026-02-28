@@ -3355,6 +3355,12 @@
 
         // Start
         init();
+        
+        // Keep Render alive with periodic health ping
+        setInterval(() => {
+            fetch('https://skypulsear-api.onrender.com/health')
+                .catch(() => {});
+        }, 600000);
     </script>
 </body>
 

@@ -100,6 +100,24 @@ class OpenMeteoClient {
             wind_speed: wind[i] ?? 0
         }));
     }
+
+    async getDailyForecast(lat, lon, days = 3) {
+        const params = new URLSearchParams({
+            latitude: lat,
+            longitude: lon,
+            daily: ['sunrise', 'sunset', 'uv_index_max'].join(','),
+            timezone: 'America/Argentina/Cordoba',
+            forecast_days: days
+        });
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+        if (!res.ok) throw new Error(`Open-Meteo daily error: ${res.status}`);
+        const json = await res.json();
+        return {
+            sunrise: json.daily?.sunrise ?? [],
+            sunset: json.daily?.sunset ?? [],
+            uv_index_max: json.daily?.uv_index_max ?? []
+        };
+    }
 }
 
 if (typeof window !== 'undefined') {
